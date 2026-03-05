@@ -1,0 +1,94 @@
+# So, this is a pseudo code. A rough logic.
+
+# Example 1 - If a student let's downloads a file or multiple file, then the code will somewhat look like this.
+
+When, download button pressed:
+  # STEPS
+    1. Frontend Components will react/work
+    2. Backend logic will process
+    3. DB will be activated
+    4. DB will be responsible for providing file
+    5. DB will send the file to the Backend
+    6. Backend will be parsing/receiving the file
+    7. The file will be received by the Frontend
+    8. Download action will be performed
+    9. User will be satisfied & he will get the file
+
+Right??
+
+# Example 2 - If a parent asks for a report, then the code will somewhat look like this.
+
+When, get_report or some related action is performed by the User:
+  # STEPS
+    1. The Frontend Components will be on alert
+    2. Request will be sent to the Backend
+    3. Backend will tickle AI Component
+    4. AI Evaluation/Analysing algorithm/related-code-logic will be triggered
+    5. AI will send request to the DB for getting related data
+    6. DB will return data
+    7. The data will be analyzed by the written code logic & it will be given to the API
+    8. API will generate a report on the basis of analysis done
+    9. Report will be sent to the Backend
+    10. Backend to the Frontend
+    11. Frontend to the User.
+    12. User == Satisfied
+
+## CORRECTED CODE
+
+# Example 1 - If a student let's downloads a file or multiple file, then the code will somewhat look like this.
+
+When, download button pressed:
+  # STEPS
+    1. User clicks Download
+    2. Frontend sends request to Backend:
+        GET /file/123/download
+
+    3. Backend:
+        - Validates user token
+        - Checks permission
+        - Queries DB for file metadata
+        - Gets file storage location (S3 URL)
+
+    4. Backend generates signed URL (secure temporary link)
+
+    5. Backend sends signed URL to Frontend
+
+    6. Frontend triggers download directly from storage/CDN
+
+    7. User downloads file
+
+# Example 2 - If a parent asks for a report, then the code will somewhat look like this.
+
+When, get_report or some related action is performed by the User:
+  # STEPS
+
+Option A – Simple Report (Quick Response)
+
+1. Parent clicks "Generate Report"
+2. Frontend → Backend API
+3. Backend validates token
+4. Backend fetches required data from DB
+5. Backend sends data to AI/Analytics Engine
+6. AI processes & returns analysis
+7. Backend formats structured report
+8. Backend sends JSON to Frontend
+9. Frontend renders report UI
+
+Option B – Heavy Report (Better Architecture)
+
+1. Parent clicks Generate Report
+2. Frontend → Backend
+3. Backend validates request
+4. Backend pushes report job to queue
+5. Backend returns:
+   "Report is being generated"
+
+6. Worker service:
+   - Fetches data from DB
+   - Runs AI analysis
+   - Generates PDF / structured report
+   - Stores report in storage
+   - Updates DB status
+
+7. Notification sent to parent
+8. Parent downloads finished report

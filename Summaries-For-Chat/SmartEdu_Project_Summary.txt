@@ -1,0 +1,149 @@
+SMARTEDU PROJECT – ARCHITECTURE & DATABASE SUMMARY
+
+1. PROJECT VISION
+
+Our project is an AI-powered EdTech platform designed to manage student
+data, academic progression, performance analytics, and AI-generated
+reports for parents, teachers, and tutors.
+
+The system is built around a student-centric architecture: Student →
+Enrollment → Assessments → Skill Metrics → AI Reports → Insights
+
+The long-term goal is to create an enterprise-grade, scalable, AI-ready
+academic intelligence system.
+
+------------------------------------------------------------------------
+
+2. CORE ARCHITECTURE DECISION
+
+We evaluated whether to create separate databases for: - Primary
+School - Secondary School - Higher Secondary School
+
+Final Decision: We will use ONE unified PostgreSQL database with proper
+relational modeling.
+
+Reason: - Student input structure remains constant - Only attributes
+such as board and school level change - Structure does not change across
+levels - AI requires longitudinal student history - Multiple databases
+increase complexity and maintenance
+
+Logical separation (tables + relationships) is preferred over physical
+separation (multiple databases).
+
+------------------------------------------------------------------------
+
+3. DATABASE DESIGN STRUCTURE
+
+A)  Identity & Access Layer
+
+-   users
+-   user_profile
+-   parent_student_map
+
+B)  Academic Structure
+
+-   boards
+-   academic_years
+-   grades
+-   subjects
+-   topics
+-   curriculum_map
+
+C)  School Organization Layer
+
+-   school_levels
+-   schools
+-   student_school_enrollment
+-   student_subjects
+
+D)  Sessions & Learning
+
+-   sessions
+-   session_notes
+-   assignments
+
+E)  Performance Layer
+
+-   assessments
+-   skill_metrics
+
+F)  AI Layer
+
+-   reports
+-   ai_feedback_logs
+-   recommendations
+
+G)  System Logs
+
+-   activity_logs
+-   audit_logs
+
+------------------------------------------------------------------------
+
+4. STUDENT-CENTRIC MODEL
+
+The core data flow of the system:
+
+Student ↓ Enrollment (School + Grade + Academic Year) ↓ Assessments &
+Subject Performance ↓ Skill Metrics ↓ AI Aggregation ↓ Reports for
+Parents / Teachers / Tutors
+
+This unified structure enables: - Multi-year tracking - Board-specific
+curriculum mapping - Longitudinal performance analytics - Clean AI data
+aggregation
+
+------------------------------------------------------------------------
+
+5. WHY MULTIPLE DATABASES WERE REJECTED
+
+Creating multiple databases would cause: - Cross-database merging
+complexity - Harder analytics - Complicated AI aggregation - More DevOps
+overhead - Separate backups and migrations - Fragmented student history
+
+School level is a classification attribute, not a structural boundary.
+
+Scalability will instead be handled through: - Proper indexing - Query
+optimization - Logical separation via schemas - Future multi-tenant
+design if needed
+
+------------------------------------------------------------------------
+
+6. PERFORMANCE OPTIMIZATION STRATEGY
+
+Indexes were created on: - Foreign keys - Frequently filtered columns -
+Time-based columns (created_at, session_date, etc.)
+
+Purpose: - Faster reads - Efficient dashboards - Optimized AI queries -
+Time-series performance tracking
+
+------------------------------------------------------------------------
+
+7. PYTHON ENVIRONMENT DECISION
+
+We selected Python 3.11 for: - Stability - FastAPI compatibility -
+SQLAlchemy support - ML library compatibility - Production reliability
+
+------------------------------------------------------------------------
+
+8. ARCHITECTURAL PRINCIPLES FOLLOWED
+
+-   Structure same → One database
+-   Classification different → Use columns
+-   Optimize for AI aggregation
+-   Maintain unified student history
+-   Design for long-term scalability
+-   Think in terms of ERP-level architecture
+
+------------------------------------------------------------------------
+
+9. CURRENT SYSTEM STATE
+
+-   Enterprise-level relational schema completed
+-   AI-ready performance pipeline designed
+-   Clean domain separation in SQL structure
+-   Scalable foundation for multi-school future expansion
+
+------------------------------------------------------------------------
+
+END OF SUMMARY This document can be used to continue the project in a
+new chat window without losing architectural context.
