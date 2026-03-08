@@ -85,6 +85,7 @@ pydantic-core==2.41.5
 pydantic-settings==2.3.4
 pygments==2.19.2
 pyjwt==2.8.0
+pysqlite3==0.6.0
 pytest==8.2.2
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
@@ -131,4 +132,3 @@ wcwidth==0.6.0
 websockets==16.0
 win32-setctime==1.2.0
 yarl==1.23.0
-pysqlite3
