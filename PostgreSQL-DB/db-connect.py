@@ -1,7 +1,7 @@
 import psycopg2
 
 conn = psycopg2.connect(
-    database = "postgres",
+    database = "Tutors_DB",
     user = "postgres",
     password = "lokesh123",
     host = "localhost",
@@ -10,7 +10,7 @@ conn = psycopg2.connect(
 
 cursor = conn.cursor()
 
-cursor.execute("select * from users")
+cursor.execute("select * from tutors")
 
 data = cursor.fetchall()
 
