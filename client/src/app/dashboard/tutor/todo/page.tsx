@@ -1,100 +1,156 @@
 "use client";
 
-import { CheckSquare, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { Plus, CheckSquare, Trash2, Calendar, AlertCircle, Sparkles } from "lucide-react";
+import { loadFromStorage, saveToStorage, generateId } from "@/lib/storage";
+import { Todo } from "@/types";
+import clsx from "clsx";
 
-const initialTasks = [
-  { id: 1, text: "Prepare lecture notes for Ch.8 – Thermodynamics",  done: false, priority: "High" },
-  { id: 2, text: "Call Rajesh Kumar's parents about fee payment",      done: false, priority: "High" },
-  { id: 3, text: "Upload Math formula sheet to Batch A portal",       done: true,  priority: "Medium" },
-  { id: 4, text: "Create test paper for Physics Unit 3",              done: false, priority: "Medium" },
-  { id: 5, text: "Reply to Arjun Patel's enquiry",                    done: false, priority: "Low" },
-  { id: 6, text: "Update timetable for next week",                    done: true,  priority: "Low" },
+const SEED: Todo[] = [
+  { id:"td1", task:"Prepare question paper for JEE Mock Test", priority:"High", completed:false, createdAt:"2026-03-10" },
+  { id:"td2", task:"Review pending fee payments for Batch B",  priority:"Medium",completed:false, createdAt:"2026-03-11" },
+  { id:"td3", task:"Upload Thermodynamics lecture notes",      priority:"Low",   completed:false, createdAt:"2026-03-11" },
+  { id:"td4", task:"Call parents of at-risk students",         priority:"High",  completed:true,  createdAt:"2026-03-09" },
+  { id:"td5", task:"Schedule doubt clearing session",          priority:"Medium",completed:true,  createdAt:"2026-03-08" },
 ];
 
-const priorityColors: Record<string, string> = {
-  High: "bg-danger-100 text-danger-600",
-  Medium: "bg-warning-100 text-warning-600",
-  Low: "bg-success-100 text-success-600",
+const PRIORITIES: Todo["priority"][] = ["Low", "Medium", "High"];
+
+const PRIORITY_COLORS: Record<Todo["priority"], { text: string; bg: string; badge: string; icon: React.ReactNode }> = {
+  High:   { text:"text-danger-600",  bg:"bg-danger-50",   badge:"bg-danger-100 text-danger-700 border-danger-200",     icon:<AlertCircle size={14}/> },
+  Medium: { text:"text-warning-600", bg:"bg-warning-50",  badge:"bg-warning-100 text-warning-700 border-warning-200",  icon:<AlertCircle size={14}/> },
+  Low:    { text:"text-primary-600", bg:"bg-primary-50",  badge:"bg-primary-100 text-primary-700 border-primary-200",  icon:<Sparkles size={14}/> },
 };
 
 export default function TodoPage() {
-  const [tasks, setTasks] = useState(initialTasks);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [newTask, setNewTask] = useState("");
+  const [newPriority, setNewPriority] = useState<Todo["priority"]>("Medium");
+  const [filter, setFilter] = useState<"All"|"Active"|"Completed">("All");
 
-  const toggle = (id: number) =>
-    setTasks(t => t.map(task => task.id === id ? { ...task, done: !task.done } : task));
+  useEffect(() => {
+    const stored = loadFromStorage<Todo[]>("todos", []);
+    setTodos(stored.length ? stored : SEED);
+    if (!stored.length) saveToStorage("todos", SEED);
+  }, []);
 
-  const remove = (id: number) =>
-    setTasks(t => t.filter(task => task.id !== id));
+  const persist = (data: Todo[]) => { setTodos(data); saveToStorage("todos", data); };
 
-  const add = () => {
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!newTask.trim()) return;
-    setTasks(t => [...t, { id: Date.now(), text: newTask.trim(), done: false, priority: "Medium" }]);
+    const todo: Todo = { id: generateId(), task: newTask.trim(), priority: newPriority, completed: false, createdAt: new Date().toISOString().split("T")[0] };
+    persist([todo, ...todos]);
     setNewTask("");
+    setNewPriority("Medium");
   };
 
-  const pending   = tasks.filter(t => !t.done).length;
-  const completed = tasks.filter(t => t.done).length;
+  const toggle = (id: string) => persist(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+  const remove = (id: string) => persist(todos.filter(t => t.id !== id));
+  const clearCompleted = () => persist(todos.filter(t => !t.completed));
+
+  const filtered = useMemo(() => {
+    if (filter === "All") return todos;
+    return todos.filter(t => filter === "Completed" ? t.completed : !t.completed);
+  }, [todos, filter]);
+
+  const stats = {
+    total: todos.length,
+    completed: todos.filter(t=>t.completed).length,
+    active: todos.filter(t=>!t.completed).length,
+  };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            <CheckSquare size={22} className="text-primary-500" />
-            Todo Tasks
+            <CheckSquare size={20} className="text-primary-500"/> Tasks
           </h1>
-          <p className="text-sm text-text-muted mt-0.5">{pending} pending · {completed} completed</p>
+          <p className="text-sm text-text-muted mt-0.5">{stats.active} tasks remaining</p>
         </div>
       </div>
 
-      {/* Add task */}
-      <div className="page-card">
-        <div className="flex gap-3">
+      {/* Input area */}
+      <div className="page-card !p-4">
+        <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-3">
           <input
-            type="text"
-            value={newTask}
-            onChange={e => setNewTask(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && add()}
-            placeholder="Type a new task and press Enter..."
-            className="input-field"
+            value={newTask} onChange={e=>setNewTask(e.target.value)}
+            placeholder="What needs to be done?"
+            className="flex-1 input-field"
           />
-          <button onClick={add} className="btn-primary flex-shrink-0">
-            <Plus size={16} /> Add
-          </button>
-        </div>
-      </div>
-
-      {/* Tasks list */}
-      <div className="page-card space-y-2">
-        <h2 className="text-base font-semibold text-text-primary mb-4">All Tasks</h2>
-        {tasks.map((task) => (
-          <div
-            key={task.id}
-            className={`flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 ${
-              task.done ? "opacity-50" : "hover:bg-surface-muted"
-            }`}
-          >
-            <button
-              onClick={() => toggle(task.id)}
-              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                task.done
-                  ? "bg-success-500 border-success-500"
-                  : "border-surface-border hover:border-primary-400"
-              }`}
-            >
-              {task.done && <span className="text-white text-xs font-bold">✓</span>}
-            </button>
-            <span className={`flex-1 text-sm ${task.done ? "line-through text-text-muted" : "text-text-primary"}`}>
-              {task.text}
-            </span>
-            <span className={`badge flex-shrink-0 ${priorityColors[task.priority]}`}>{task.priority}</span>
-            <button onClick={() => remove(task.id)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-danger-50 transition-colors flex-shrink-0">
-              <Trash2 size={13} className="text-danger-400" />
+          <div className="flex gap-3">
+            <select value={newPriority} onChange={e=>setNewPriority(e.target.value as Todo["priority"])} className="input-field w-32 shrink-0">
+              {PRIORITIES.map(p=><option key={p} value={p}>{p} Priority</option>)}
+            </select>
+            <button type="submit" disabled={!newTask.trim()} className="btn-primary shrink-0 disabled:opacity-50">
+              <Plus size={16}/> Add Task
             </button>
           </div>
-        ))}
+        </form>
+      </div>
+
+      {/* Filters and List */}
+      <div className="page-card !p-0 overflow-hidden">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between p-4 border-b border-surface-border bg-surface-muted/30">
+          <div className="flex gap-2">
+            {(["All","Active","Completed"] as const).map(f => (
+              <button key={f} onClick={()=>setFilter(f)}
+                className={clsx("px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors",
+                  filter===f ? "bg-white shadow-sm text-text-primary border border-surface-border" : "text-text-muted hover:bg-surface-muted")}>
+                {f} {f==="All"?stats.total : f==="Active"?stats.active : stats.completed}
+              </button>
+            ))}
+          </div>
+          {stats.completed > 0 && (
+            <button onClick={clearCompleted} className="text-xs font-medium text-text-muted hover:text-danger-500 transition-colors">
+              Clear completed
+            </button>
+          )}
+        </div>
+
+        {/* List */}
+        <div className="divide-y divide-surface-border">
+          {filtered.length === 0 ? (
+            <div className="py-12 text-center flex flex-col items-center gap-3">
+              <CheckSquare size={40} className="text-surface-border"/>
+              <p className="text-sm text-text-muted font-medium">No tasks found. Relax or add a new one!</p>
+            </div>
+          ) : (
+            filtered.map(t => (
+              <div key={t.id} className={clsx("group flex flex-col sm:flex-row sm:items-center justify-between p-4 transition-colors",
+                t.completed ? "bg-surface-muted/50" : "hover:bg-surface-muted/30")}>
+
+                {/* Left: Checkbox + Text */}
+                <div className="flex items-start gap-4 flex-1 min-w-0">
+                  <button onClick={() => toggle(t.id)}
+                    className={clsx("w-5 h-5 rounded flex shrink-0 items-center justify-center border transition-all mt-0.5",
+                      t.completed ? "bg-primary-500 border-primary-500 text-white" : "border-surface-border text-transparent hover:border-primary-400 hover:bg-primary-50")}>
+                    <CheckSquare size={12}/>
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className={clsx("text-sm font-medium transition-all break-words", t.completed ? "text-text-muted line-through" : "text-text-primary")}>
+                      {t.task}
+                    </p>
+                    <div className="flex items-center gap-3 mt-1.5 opacity-80">
+                      <span className={clsx("badge border flex items-center gap-1 !px-1.5 !py-0", PRIORITY_COLORS[t.priority].badge)}>
+                        {PRIORITY_COLORS[t.priority].icon}{t.priority}
+                      </span>
+                      <span className="text-[11px] text-text-muted flex items-center gap-1"><Calendar size={10}/> {t.createdAt}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Delete */}
+                <button onClick={() => remove(t.id)}
+                  className="sm:opacity-0 sm:group-hover:opacity-100 p-2 rounded-xl text-text-muted hover:text-danger-500 hover:bg-danger-50 transition-all self-end sm:self-auto shrink-0 mt-2 sm:mt-0">
+                  <Trash2 size={16}/>
+                </button>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

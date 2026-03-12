@@ -1,120 +1,243 @@
-import { Users, Search, Plus, Filter, MoreVertical, TrendingUp } from "lucide-react";
+"use client";
 
-const students = [
-  { id: 1, name: "Ananya Singh",   batch: "Batch B", fee: "Paid",    score: 88, status: "Active" },
-  { id: 2, name: "Rajesh Kumar",   batch: "Batch A", fee: "Overdue", score: 72, status: "Active" },
-  { id: 3, name: "Priya Sharma",   batch: "Batch C", fee: "Paid",    score: 91, status: "Active" },
-  { id: 4, name: "Suresh Patel",   batch: "Batch A", fee: "Paid",    score: 65, status: "At Risk" },
-  { id: 5, name: "Ravi Sharma",    batch: "Batch A", fee: "Paid",    score: 96, status: "Active" },
-  { id: 6, name: "Meena Joshi",    batch: "Batch B", fee: "Pending", score: 78, status: "Active" },
-  { id: 7, name: "Arjun Verma",    batch: "Batch C", fee: "Paid",    score: 83, status: "Active" },
-  { id: 8, name: "Kavya Iyer",     batch: "Batch B", fee: "Paid",    score: 59, status: "At Risk" },
+import { useState, useEffect, useMemo } from "react";
+import { Plus, Search, Pencil, Trash2, X, Users } from "lucide-react";
+import { loadFromStorage, saveToStorage, generateId } from "@/lib/storage";
+import { Student } from "@/types";
+import Modal from "@/components/ui/Modal";
+import clsx from "clsx";
+
+// ── Seed data shown on first load ─────────────────────────────────────────────
+const SEED: Student[] = [
+  { id: "s1", name: "Aarav Mehta",    email: "aarav@email.com",   phone: "9876543210", course: "JEE Mains",  batch: "Batch A", feeStatus: "Paid",    status: "Active",  score: 87, joinDate: "2026-01-10" },
+  { id: "s2", name: "Priya Sharma",   email: "priya@email.com",   phone: "9765432109", course: "NEET Prep",  batch: "Batch B", feeStatus: "Overdue",  status: "At Risk", score: 54, joinDate: "2026-01-15" },
+  { id: "s3", name: "Ravi Kumar",     email: "ravi@email.com",    phone: "9654321098", course: "JEE Advance",batch: "Batch A", feeStatus: "Paid",    status: "Active",  score: 92, joinDate: "2026-02-01" },
+  { id: "s4", name: "Sneha Patel",    email: "sneha@email.com",   phone: "9543210987", course: "NEET Prep",  batch: "Batch C", feeStatus: "Pending",  status: "Active",  score: 78, joinDate: "2026-02-10" },
+  { id: "s5", name: "Dev Kapoor",     email: "dev@email.com",     phone: "9432109876", course: "JEE Mains",  batch: "Batch B", feeStatus: "Partial",  status: "Active",  score: 65, joinDate: "2026-03-01" },
 ];
 
-const feeColors: Record<string, string> = {
-  Paid: "bg-success-100 text-success-600",
-  Overdue: "bg-danger-100 text-danger-600",
-  Pending: "bg-warning-100 text-warning-600",
+const BLANK: Omit<Student, "id"> = {
+  name: "", email: "", phone: "", course: "", batch: "",
+  feeStatus: "Pending", status: "Active", score: 0, joinDate: new Date().toISOString().split("T")[0],
 };
-const statusColors: Record<string, string> = {
-  Active: "bg-success-100 text-success-600",
-  "At Risk": "bg-danger-100 text-danger-600",
+
+const FEE_COLORS: Record<Student["feeStatus"], string> = {
+  Paid:    "bg-success-50 text-success-600 border-success-200",
+  Pending: "bg-warning-50 text-warning-600 border-warning-200",
+  Overdue: "bg-danger-50  text-danger-600  border-danger-200",
+  Partial: "bg-primary-50 text-primary-600 border-primary-200",
+};
+const STATUS_COLORS: Record<Student["status"], string> = {
+  Active:   "bg-success-50 text-success-600",
+  "At Risk":"bg-danger-50  text-danger-600",
+  Inactive: "bg-surface-muted text-text-muted",
 };
 
 export default function StudentsPage() {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [search, setSearch]     = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing]   = useState<Student | null>(null);
+  const [form, setForm]         = useState<Omit<Student, "id">>(BLANK);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Load from localStorage (seed if empty)
+  useEffect(() => {
+    const stored = loadFromStorage<Student[]>("students", []);
+    setStudents(stored.length ? stored : SEED);
+    if (!stored.length) saveToStorage("students", SEED);
+  }, []);
+
+  const persist = (data: Student[]) => { setStudents(data); saveToStorage("students", data); };
+
+  // Filtered list
+  const filtered = useMemo(() =>
+    students.filter(s =>
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.course.toLowerCase().includes(search.toLowerCase()) ||
+      s.email.toLowerCase().includes(search.toLowerCase())
+    ), [students, search]);
+
+  // Open add modal
+  const openAdd = () => { setEditing(null); setForm(BLANK); setModalOpen(true); };
+
+  // Open edit modal
+  const openEdit = (s: Student) => {
+    setEditing(s);
+    const { id: _id, ...rest } = s;
+    setForm(rest);
+    setModalOpen(true);
+  };
+
+  // Save (add or edit)
+  const handleSave = () => {
+    if (!form.name.trim() || !form.course.trim()) return;
+    if (editing) {
+      persist(students.map(s => s.id === editing.id ? { ...form, id: editing.id } : s));
+    } else {
+      persist([...students, { ...form, id: generateId() }]);
+    }
+    setModalOpen(false);
+  };
+
+  // Delete
+  const handleDelete = (id: string) => {
+    persist(students.filter(s => s.id !== id));
+    setDeleteId(null);
+  };
+
+  const f = (field: keyof typeof form, value: string | number) =>
+    setForm(prev => ({ ...prev, [field]: value }));
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            <Users size={22} className="text-primary-500" />
-            Students
+            <Users size={20} className="text-primary-500" /> Students
           </h1>
-          <p className="text-sm text-text-muted mt-0.5">Manage your student profiles and records</p>
+          <p className="text-sm text-text-muted mt-0.5">{students.length} enrolled students</p>
         </div>
-        <button className="btn-primary">
+        <button id="add-student-btn" onClick={openAdd} className="btn-primary">
           <Plus size={16} /> Add Student
         </button>
       </div>
 
-      {/* Search + Filter */}
-      <div className="page-card">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="flex-1 flex items-center gap-2 bg-surface-muted border border-surface-border rounded-xl px-3 py-2.5">
-            <Search size={15} className="text-text-muted" />
-            <input
-              type="text"
-              placeholder="Search students by name or batch..."
-              className="bg-transparent text-sm text-text-primary placeholder:text-text-muted focus:outline-none w-full"
-            />
-          </div>
-          <button className="btn-secondary">
-            <Filter size={15} /> Filter
-          </button>
-        </div>
+      {/* Search */}
+      <div className="page-card !p-3 flex items-center gap-2">
+        <Search size={16} className="text-text-muted ml-1" />
+        <input
+          value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="Search by name, course or email…"
+          className="flex-1 bg-transparent text-sm text-text-primary focus:outline-none placeholder:text-text-muted"
+        />
+        {search && <button onClick={() => setSearch("")}><X size={14} className="text-text-muted hover:text-text-primary" /></button>}
+      </div>
 
-        {/* Table */}
+      {/* Table */}
+      <div className="page-card !p-0 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr>
-                <th className="table-header text-left rounded-l-lg">#</th>
-                <th className="table-header text-left">Name</th>
-                <th className="table-header text-left">Batch</th>
-                <th className="table-header text-left">Fee Status</th>
-                <th className="table-header text-left">Last Score</th>
-                <th className="table-header text-left">Status</th>
-                <th className="table-header text-right rounded-r-lg">Actions</th>
+                {["Student", "Contact", "Course / Batch", "Fee Status", "Score", "Status", "Actions"].map(h => (
+                  <th key={h} className="table-header first:pl-6 last:pr-6 whitespace-nowrap">{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {students.map((s) => (
-                <tr key={s.id} className="hover:bg-surface-muted/50 transition-colors duration-150">
-                  <td className="table-cell text-text-muted text-xs">{s.id}</td>
-                  <td className="table-cell">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white text-xs font-bold">{s.name.charAt(0)}</span>
+              {filtered.length === 0 ? (
+                <tr><td colSpan={7} className="text-center py-12 text-sm text-text-muted">No students found.</td></tr>
+              ) : filtered.map((s) => (
+                <tr key={s.id} className="hover:bg-surface-muted transition-colors">
+                  <td className="table-cell pl-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-xs font-bold">{s.name.split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase()}</span>
                       </div>
-                      <span className="font-medium text-text-primary">{s.name}</span>
+                      <div>
+                        <p className="text-sm font-semibold text-text-primary">{s.name}</p>
+                        <p className="text-xs text-text-muted">Joined {s.joinDate}</p>
+                      </div>
                     </div>
                   </td>
                   <td className="table-cell">
-                    <span className="badge bg-primary-50 text-primary-600">{s.batch}</span>
+                    <p className="text-sm text-text-primary">{s.email}</p>
+                    <p className="text-xs text-text-muted">{s.phone}</p>
                   </td>
                   <td className="table-cell">
-                    <span className={`badge ${feeColors[s.fee]}`}>{s.fee}</span>
+                    <p className="text-sm text-text-primary font-medium">{s.course}</p>
+                    <p className="text-xs text-text-muted">{s.batch}</p>
                   </td>
                   <td className="table-cell">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-text-primary">{s.score}%</span>
-                      <TrendingUp size={13} className={s.score >= 75 ? "text-success-500" : "text-danger-500"} />
+                    <span className={clsx("badge border", FEE_COLORS[s.feeStatus])}>{s.feeStatus}</span>
+                  </td>
+                  <td className="table-cell">
+                    <span className="text-sm font-semibold text-text-primary">{s.score}%</span>
+                  </td>
+                  <td className="table-cell">
+                    <span className={clsx("badge", STATUS_COLORS[s.status])}>{s.status}</span>
+                  </td>
+                  <td className="table-cell pr-6">
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg hover:bg-primary-50 text-text-muted hover:text-primary-500 transition-colors">
+                        <Pencil size={14} />
+                      </button>
+                      {deleteId === s.id ? (
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => handleDelete(s.id)} className="text-xs px-2 py-1 bg-danger-500 text-white rounded-lg">Yes</button>
+                          <button onClick={() => setDeleteId(null)} className="text-xs px-2 py-1 bg-surface-muted text-text-muted rounded-lg">No</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setDeleteId(s.id)} className="p-1.5 rounded-lg hover:bg-danger-50 text-text-muted hover:text-danger-500 transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
-                  </td>
-                  <td className="table-cell">
-                    <span className={`badge ${statusColors[s.status]}`}>{s.status}</span>
-                  </td>
-                  <td className="table-cell text-right">
-                    <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-border transition-colors ml-auto">
-                      <MoreVertical size={14} className="text-text-muted" />
-                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      </div>
 
-        {/* Footer */}
-        <div className="mt-4 pt-4 border-t border-surface-border flex items-center justify-between text-xs text-text-muted">
-          <span>Showing {students.length} of 120 students</span>
-          <div className="flex items-center gap-2">
-            <button className="btn-secondary text-xs py-1.5 px-3">Previous</button>
-            <button className="btn-primary text-xs py-1.5 px-3">Next</button>
+      {/* Add / Edit Modal */}
+      <Modal isOpen={modalOpen} title={editing ? "Edit Student" : "Add New Student"} onClose={() => setModalOpen(false)}>
+        <div className="space-y-4">
+          {([["Full Name", "name", "text"], ["Email", "email", "email"], ["Phone", "phone", "tel"]] as const).map(([label, key, type]) => (
+            <div key={key}>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">{label}</label>
+              <input type={type} value={form[key as keyof typeof form] as string}
+                onChange={e => f(key, e.target.value)}
+                placeholder={label}
+                className="input-field" />
+            </div>
+          ))}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Course</label>
+              <input value={form.course} onChange={e => f("course", e.target.value)} placeholder="e.g. JEE Mains" className="input-field" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Batch</label>
+              <input value={form.batch} onChange={e => f("batch", e.target.value)} placeholder="e.g. Batch A" className="input-field" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Fee Status</label>
+              <select value={form.feeStatus} onChange={e => f("feeStatus", e.target.value)} className="input-field">
+                {(["Paid","Pending","Overdue","Partial"] as const).map(v => <option key={v}>{v}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Status</label>
+              <select value={form.status} onChange={e => f("status", e.target.value)} className="input-field">
+                {(["Active","At Risk","Inactive"] as const).map(v => <option key={v}>{v}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Score (%)</label>
+              <input type="number" min={0} max={100} value={form.score}
+                onChange={e => f("score", Number(e.target.value))} className="input-field" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Join Date</label>
+              <input type="date" value={form.joinDate} onChange={e => f("joinDate", e.target.value)} className="input-field" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button onClick={() => setModalOpen(false)} className="px-4 py-2 text-sm text-text-secondary border border-surface-border rounded-xl hover:bg-surface-muted transition-colors">Cancel</button>
+            <button onClick={handleSave} disabled={!form.name.trim() || !form.course.trim()} className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+              {editing ? "Save Changes" : "Add Student"}
+            </button>
           </div>
         </div>
-      </div>
+      </Modal>
     </div>
   );
 }

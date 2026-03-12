@@ -1,112 +1,128 @@
-import { UserPlus, CreditCard, FileUp, Clock, BookOpen, CheckCircle } from "lucide-react";
+"use client";
+
+import { useState, useEffect } from "react";
+import { UserPlus, BookOpen, CreditCard, Clock, FileText, Upload } from "lucide-react";
+import { loadFromStorage } from "@/lib/storage";
+import { Student, Course, Payment, Material } from "@/types";
 import clsx from "clsx";
 
-const activities = [
-  {
-    icon: UserPlus,
-    iconBg: "bg-primary-100",
-    iconColor: "text-primary-600",
-    title: "New Enrollment",
-    description: "Ananya Singh joined Batch B",
-    time: "2 min ago",
-    dotColor: "bg-primary-500",
-  },
-  {
-    icon: CreditCard,
-    iconBg: "bg-success-100",
-    iconColor: "text-success-600",
-    title: "Payment Received",
-    description: "₹10,000 received from Suresh Kumar",
-    time: "18 min ago",
-    dotColor: "bg-success-500",
-  },
-  {
-    icon: FileUp,
-    iconBg: "bg-warning-100",
-    iconColor: "text-warning-600",
-    title: "Material Uploaded",
-    description: "Physics Notes – Chapter 7 added",
-    time: "1 hr ago",
-    dotColor: "bg-warning-500",
-  },
-  {
-    icon: CheckCircle,
-    iconBg: "bg-success-100",
-    iconColor: "text-success-600",
-    title: "Test Marked",
-    description: "Math Quiz results entered for Batch A",
-    time: "3 hrs ago",
-    dotColor: "bg-success-500",
-  },
-  {
-    icon: BookOpen,
-    iconBg: "bg-primary-100",
-    iconColor: "text-primary-600",
-    title: "Class Completed",
-    description: "Chemistry – Organic Reactions (Batch C)",
-    time: "5 hrs ago",
-    dotColor: "bg-primary-400",
-  },
-  {
-    icon: Clock,
-    iconBg: "bg-surface-muted",
-    iconColor: "text-text-muted",
-    title: "Timetable Updated",
-    description: "Monday slot changed to 5:00 PM",
-    time: "Yesterday",
-    dotColor: "bg-text-muted",
-  },
-];
+interface FeedItem {
+  id: string;
+  title: string;
+  desc: string;
+  time: string;
+  icon: React.ReactNode;
+  bgClass: string;
+  dateVal: number; // for sorting
+}
 
 export default function ActivityFeed() {
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+
+  useEffect(() => {
+    const students  = loadFromStorage<Student[]>("students", []);
+    const courses   = loadFromStorage<Course[]>("courses", []);
+    const payments  = loadFromStorage<Payment[]>("payments", []);
+    const materials = loadFromStorage<Material[]>("materials", []);
+
+    const list: FeedItem[] = [];
+
+    // Recent Students
+    students.forEach(s => list.push({
+      id: `s-${s.id}`,
+      title: "New Student Enrolled",
+      desc: `${s.name} joined ${s.course}`,
+      time: s.joinDate,
+      dateVal: new Date(s.joinDate).getTime(),
+      icon: <UserPlus size={16} />,
+      bgClass: "bg-success-100 text-success-600",
+    }));
+
+    // Recent Courses
+    courses.forEach(c => list.push({
+      id: `c-${c.id}`,
+      title: "Course Created",
+      desc: `${c.title} (${c.batch}) started`,
+      time: c.startDate,
+      dateVal: new Date(c.startDate).getTime(),
+      icon: <BookOpen size={16} />,
+      bgClass: "bg-primary-100 text-primary-600",
+    }));
+
+    // Recent Completed Payments
+    payments.filter(p => p.status === "Paid").forEach(p => list.push({
+      id: `p-${p.id}`,
+      title: "Fee Paid",
+      desc: `${p.studentName} paid ₹${p.paidAmount.toLocaleString("en-IN")}`,
+      time: p.lastPaidDate !== "—" ? p.lastPaidDate : p.dueDate,
+      dateVal: new Date(p.lastPaidDate !== "—" ? p.lastPaidDate : p.dueDate).getTime(),
+      icon: <CreditCard size={16} />,
+      bgClass: "bg-warning-100 text-warning-600",
+    }));
+
+    // Recent Materials
+    materials.forEach(m => list.push({
+      id: `m-${m.id}`,
+      title: "Material Uploaded",
+      desc: `${m.title} added to ${m.courseName}`,
+      time: m.uploadDate,
+      dateVal: new Date(m.uploadDate).getTime(),
+      icon: <Upload size={16} />,
+      bgClass: "bg-purple-100 text-purple-600",
+    }));
+
+    // Sort descending by date, take top 6
+    const sorted = list.sort((a,b) => b.dateVal - a.dateVal).slice(0, 6);
+    setFeed(sorted);
+  }, []);
+
   return (
-    <div className="page-card">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h2 className="text-base font-semibold text-text-primary">Recent Activity</h2>
-          <p className="text-xs text-text-muted mt-0.5">Latest updates from your dashboard</p>
-        </div>
-        <button className="text-xs text-primary-500 font-medium hover:text-primary-600 transition-colors">
-          View All
-        </button>
+    <div className="page-card h-full flex flex-col animate-fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-base font-bold text-text-primary">Recent Activity</h2>
       </div>
 
-      <div className="relative">
-        {/* Vertical line */}
-        <div className="absolute left-4 top-0 bottom-0 w-px bg-surface-border" />
+      {feed.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <Clock size={32} className="text-surface-border mb-2" />
+          <p className="text-sm font-semibold text-text-primary">No recent activity</p>
+          <p className="text-xs text-text-muted mt-1">Actions will appear here</p>
+        </div>
+      ) : (
+        <div className="relative pl-3 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          {/* Timeline line */}
+          <div className="absolute left-[23px] top-2 bottom-2 w-px bg-surface-border" />
 
-        <div className="space-y-1">
-          {activities.map((activity, i) => {
-            const Icon = activity.icon;
-            return (
-              <div key={i} className="relative flex items-start gap-3 pl-2 py-3 hover:bg-surface-muted/50 rounded-xl transition-colors duration-200 pr-2">
-                {/* Dot on timeline */}
-                <div className={clsx(
-                  "absolute left-3.5 top-4.5 w-2 h-2 rounded-full border-2 border-white z-10 -translate-x-1/2",
-                  activity.dotColor
-                )} style={{ marginTop: "2px" }} />
-
-                {/* Icon */}
-                <div className={clsx(
-                  "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ml-4",
-                  activity.iconBg
-                )}>
-                  <Icon size={15} className={activity.iconColor} />
+          <div className="space-y-6 relative">
+            {feed.map((item) => (
+              <div key={item.id} className="flex gap-4 group">
+                {/* Icon wrapper */}
+                <div className="relative z-10">
+                  <div
+                    className={clsx(
+                      "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border-[3px] border-white transition-transform group-hover:scale-110",
+                      item.bgClass
+                    )}
+                  >
+                    {item.icon}
+                  </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-text-primary leading-tight">{activity.title}</p>
-                  <p className="text-xs text-text-secondary mt-0.5">{activity.description}</p>
+                <div className="flex-1 pt-1">
+                  <p className="text-sm font-semibold text-text-primary leading-tight mb-0.5">
+                    {item.title}
+                  </p>
+                  <p className="text-xs text-text-muted mb-1">{item.desc}</p>
+                  <p className="text-[10px] font-medium text-text-secondary flex items-center gap-1">
+                    <Clock size={10} /> {item.time}
+                  </p>
                 </div>
-
-                {/* Time */}
-                <span className="text-xs text-text-muted flex-shrink-0">{activity.time}</span>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

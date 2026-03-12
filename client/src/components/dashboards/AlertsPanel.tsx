@@ -1,89 +1,113 @@
-import { AlertTriangle, IndianRupee, PhoneCall, Bell } from "lucide-react";
-import clsx from "clsx";
+"use client";
 
-const alerts = [
-  {
-    type: "warning",
-    icon: AlertTriangle,
-    title: "Test Tomorrow",
-    detail: "Math Quiz for Batch A — 10:00 AM",
-    time: "Tomorrow",
-    borderColor: "border-warning-200",
-    bg: "bg-warning-50",
-    iconBg: "bg-warning-100",
-    iconColor: "text-warning-600",
-    timeColor: "text-warning-600",
-  },
-  {
-    type: "danger",
-    icon: IndianRupee,
-    title: "Fee Overdue",
-    detail: "Rajesh Kumar — ₹5,000 pending",
-    time: "3 days ago",
-    borderColor: "border-danger-200",
-    bg: "bg-danger-50",
-    iconBg: "bg-danger-100",
-    iconColor: "text-danger-500",
-    timeColor: "text-danger-500",
-  },
-  {
-    type: "info",
-    icon: PhoneCall,
-    title: "Follow-Up Reminder",
-    detail: "Call enquiry from Arjun Patel",
-    time: "Today, 5:00 PM",
-    borderColor: "border-primary-200",
-    bg: "bg-primary-50",
-    iconBg: "bg-primary-100",
-    iconColor: "text-primary-500",
-    timeColor: "text-primary-500",
-  },
-  {
-    type: "warning",
-    icon: Bell,
-    title: "Parent Meeting",
-    detail: "Rohan Mehra's parents — scheduled",
-    time: "Mar 12",
-    borderColor: "border-warning-200",
-    bg: "bg-warning-50",
-    iconBg: "bg-warning-100",
-    iconColor: "text-warning-600",
-    timeColor: "text-warning-600",
-  },
-];
+import { useState, useEffect } from "react";
+import { AlertCircle, Clock, CheckCircle } from "lucide-react";
+import { loadFromStorage } from "@/lib/storage";
+import { Payment, Test } from "@/types";
+import clsx from "clsx";
+import Link from "next/link";
+
+interface AlertItem {
+  id: string;
+  title: string;
+  desc: string;
+  type: "danger" | "warning" | "success";
+  link: string;
+  time: string;
+}
 
 export default function AlertsPanel() {
-  return (
-    <div className="page-card">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-base font-semibold text-text-primary">Alerts & Reminders</h2>
-          <p className="text-xs text-text-muted mt-0.5">{alerts.length} active notifications</p>
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
+
+  useEffect(() => {
+    const payments = loadFromStorage<Payment[]>("payments", []);
+    const tests = loadFromStorage<Test[]>("tests", []);
+    const list: AlertItem[] = [];
+
+    // 1. Overdue payments (Danger)
+    const overdue = payments.filter((p) => p.status === "Overdue");
+    overdue.forEach((p) => {
+      list.push({
+        id: `p-${p.id}`,
+        title: "Overdue Fee",
+        desc: `${p.studentName} has an overdue fee of ₹${(p.totalAmount - p.paidAmount).toLocaleString("en-IN")}`,
+        type: "danger",
+        link: "/dashboard/tutor/fees",
+        time: p.dueDate,
+      });
+    });
+
+    // 2. Upcoming Tests (Warning)
+    const upcomingTests = tests.filter((t) => t.status === "Upcoming");
+    upcomingTests.forEach((t) => {
+      list.push({
+        id: `t-${t.id}`,
+        title: "Upcoming Test",
+        desc: `${t.testName} for ${t.batch} is scheduled on ${t.date}`,
+        type: "warning",
+        link: "/dashboard/tutor/tests",
+        time: t.date,
+      });
+    });
+
+    setAlerts(list);
+  }, []);
+
+  if (alerts.length === 0) {
+    return (
+      <div className="page-card h-full flex flex-col">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-text-primary">Alerts & Reminders</h2>
         </div>
-        <span className="badge bg-danger-100 text-danger-600">{alerts.length} New</span>
+        <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
+          <CheckCircle size={32} className="text-success-400 mb-2" />
+          <p className="text-sm font-semibold text-text-primary">All caught up!</p>
+          <p className="text-xs text-text-muted mt-1">No pending alerts at the moment.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page-card h-full flex flex-col animate-fade-in">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
+          Alerts & Reminders
+          <span className="bg-danger-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+            {alerts.length}
+          </span>
+        </h2>
       </div>
 
-      <div className="space-y-3">
-        {alerts.map((alert, i) => {
-          const Icon = alert.icon;
-          return (
-            <div
-              key={i}
-              className={clsx("alert-card border", alert.borderColor, alert.bg)}
-            >
-              <div className={clsx("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0", alert.iconBg)}>
-                <Icon size={15} className={alert.iconColor} />
+      <div className="flex-1 overflow-y-auto space-y-3 pr-2 -mr-2 custom-scrollbar">
+        {alerts.slice(0, 5).map((alert) => (
+          <Link
+            key={alert.id}
+            href={alert.link}
+            className={clsx(
+              "block p-3 rounded-xl border transition-all hover:-translate-y-0.5 hover:shadow-sm",
+              {
+                "bg-danger-50 border-danger-200 text-danger-700 hover:border-danger-300":
+                  alert.type === "danger",
+                "bg-warning-50 border-warning-200 text-warning-700 hover:border-warning-300":
+                  alert.type === "warning",
+                "bg-success-50 border-success-200 text-success-700 hover:border-success-300":
+                  alert.type === "success",
+              }
+            )}
+          >
+            <div className="flex items-start justify-between gap-3 mb-1">
+              <div className="flex items-center gap-2 font-semibold text-sm">
+                <AlertCircle size={14} />
+                {alert.title}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-text-primary truncate">{alert.title}</p>
-                <p className="text-xs text-text-secondary mt-0.5 truncate">{alert.detail}</p>
-              </div>
-              <span className={clsx("text-xs font-medium flex-shrink-0", alert.timeColor)}>
-                {alert.time}
+              <span className="text-[10px] font-medium opacity-70 flex items-center gap-1 shrink-0">
+                <Clock size={10} /> {alert.time}
               </span>
             </div>
-          );
-        })}
+            <p className="text-xs opacity-90 leading-relaxed">{alert.desc}</p>
+          </Link>
+        ))}
       </div>
     </div>
   );

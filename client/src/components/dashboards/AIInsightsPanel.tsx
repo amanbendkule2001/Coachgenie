@@ -1,84 +1,123 @@
-import { BrainCircuit, TrendingDown, BarChart2, Star, ArrowUpRight } from "lucide-react";
+"use client";
 
-const insights = [
-  {
-    icon: TrendingDown,
-    label: "At Risk Students",
-    value: "8",
-    sub: "Need extra attention",
-    iconBg: "bg-danger-50",
-    iconColor: "text-danger-500",
-    valueColor: "text-danger-600",
-  },
-  {
-    icon: BarChart2,
-    label: "Avg Predicted Score",
-    value: "72%",
-    sub: "+4% from last month",
-    iconBg: "bg-primary-50",
-    iconColor: "text-primary-500",
-    valueColor: "text-primary-600",
-  },
-  {
-    icon: Star,
-    label: "Top Performer",
-    value: "Ravi Sharma",
-    sub: "Score: 96% — Batch A",
-    iconBg: "bg-warning-50",
-    iconColor: "text-warning-600",
-    valueColor: "text-warning-700",
-  },
-];
+import { useState, useEffect } from "react";
+import { TrendingUp, AlertTriangle, Target, Loader2 } from "lucide-react";
+import { loadFromStorage } from "@/lib/storage";
+import { Student } from "@/types";
+import clsx from "clsx";
+
+interface InsightData {
+  atRisk: number;
+  averageScore: number;
+  topPerformers: number;
+  loading: boolean;
+}
 
 export default function AIInsightsPanel() {
+  const [data, setData] = useState<InsightData>({ atRisk: 0, averageScore: 0, topPerformers: 0, loading: true });
+
+  useEffect(() => {
+    // Simulate AI processing delay
+    const timer = setTimeout(() => {
+      const students = loadFromStorage<Student[]>("students", []);
+      if (!students.length) {
+        setData({ atRisk: 0, averageScore: 0, topPerformers: 0, loading: false });
+        return;
+      }
+
+      const active = students.filter((s) => s.status !== "Inactive");
+      const atRisk = active.filter((s) => s.score < 50 || s.status === "At Risk").length;
+      const topP = active.filter((s) => s.score >= 85).length;
+      const avg = active.length > 0 ? Math.round(active.reduce((acc, s) => acc + s.score, 0) / active.length) : 0;
+
+      setData({ atRisk, averageScore: avg, topPerformers: topP, loading: false });
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="page-card">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center">
-              <BrainCircuit size={14} className="text-white" />
+    <div className="page-card h-full flex flex-col relative overflow-hidden animate-fade-in group">
+      {/* Background glow for AI vibe */}
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-500/10 rounded-full blur-3xl group-hover:bg-primary-500/20 transition-colors" />
+
+      <div className="flex items-center justify-between mb-4 relative z-10">
+        <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
+          <SparklesIcon />
+          Performance Insights
+        </h2>
+        <span className="badge bg-primary-50 text-primary-700 border-primary-200">Live AI</span>
+      </div>
+
+      {data.loading ? (
+        <div className="flex-1 flex flex-col items-center justify-center py-6 relative z-10">
+          <Loader2 size={24} className="text-primary-500 animate-spin mb-3" />
+          <p className="text-sm font-semibold text-text-primary">Analyzing Student Data...</p>
+          <p className="text-xs text-text-muted mt-1">Calculating predictive scores</p>
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col gap-4 relative z-10">
+          {/* Main Prediction Card */}
+          <div className="bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl p-4 text-white shadow-md relative overflow-hidden">
+            <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10" />
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <p className="text-xs font-semibold text-primary-100 uppercase tracking-wider">
+                  Batch Average Score
+                </p>
+                <div className="flex items-end gap-2 mt-1">
+                  <span className="text-3xl font-black">{data.averageScore}%</span>
+                  <span className="text-xs font-medium text-success-300 flex items-center bg-white/20 px-1.5 py-0.5 rounded-lg mb-1">
+                    <TrendingUp size={10} className="mr-0.5" /> +2.4%
+                  </span>
+                </div>
+              </div>
+              <Target size={24} className="text-primary-200 opacity-80" />
             </div>
-            <h2 className="text-base font-semibold text-text-primary">AI Insights</h2>
+            <p className="text-xs text-primary-100/90 leading-tight">
+              Predicted to improve by 5% before final exams based on current submission rates.
+            </p>
           </div>
-          <p className="text-xs text-text-muted mt-1 ml-9">Predictive analytics powered by AI</p>
-        </div>
-        <button className="flex items-center gap-1 text-xs text-primary-500 font-medium hover:text-primary-600 transition-colors">
-          Full Report <ArrowUpRight size={13} />
-        </button>
-      </div>
 
-      <div className="space-y-3">
-        {insights.map((item, i) => {
-          const Icon = item.icon;
-          return (
-            <div
-              key={i}
-              className="flex items-center gap-4 p-3.5 bg-surface-muted rounded-xl hover:bg-surface-border/50 transition-colors duration-200"
-            >
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${item.iconBg}`}>
-                <Icon size={17} className={item.iconColor} />
+          <div className="grid grid-cols-2 gap-3">
+            {/* Risk Card */}
+            <div className="bg-danger-50 border border-danger-100 rounded-2xl p-3 flex flex-col justify-between transition-colors hover:bg-danger-100/50">
+              <div className="flex items-center gap-2 mb-2 text-danger-600">
+                <AlertTriangle size={16} />
+                <span className="text-xs font-semibold uppercase tracking-wider">Requires Focus</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-text-muted font-medium">{item.label}</p>
-                <p className={`text-sm font-bold truncate ${item.valueColor}`}>{item.value}</p>
+              <div>
+                <span className="text-xl font-bold text-text-primary">{data.atRisk} Students</span>
+                <p className="text-xs text-text-muted mt-0.5 leading-tight">identified as at-risk</p>
               </div>
-              <p className="text-xs text-text-muted text-right hidden sm:block max-w-[110px]">{item.sub}</p>
             </div>
-          );
-        })}
-      </div>
 
-      {/* Gradient progress bar */}
-      <div className="mt-5 pt-4 border-t border-surface-border">
-        <div className="flex items-center justify-between text-xs text-text-muted mb-2">
-          <span>Overall Class Progress</span>
-          <span className="font-semibold text-primary-500">68%</span>
+            {/* Top Performers Card */}
+            <div className="bg-success-50 border border-success-100 rounded-2xl p-3 flex flex-col justify-between transition-colors hover:bg-success-100/50">
+              <div className="flex items-center gap-2 mb-2 text-success-600">
+                <Target size={16} />
+                <span className="text-xs font-semibold uppercase tracking-wider">Top Tier</span>
+              </div>
+              <div>
+                <span className="text-xl font-bold text-text-primary">{data.topPerformers} Students</span>
+                <p className="text-xs text-text-muted mt-0.5 leading-tight">scoring above 85%</p>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="h-2 bg-surface-muted rounded-full overflow-hidden">
-          <div className="h-full w-[68%] bg-gradient-to-r from-primary-400 to-primary-600 rounded-full" />
-        </div>
-      </div>
+      )}
     </div>
+  );
+}
+
+function SparklesIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-500">
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+      <path d="M5 3v4" />
+      <path d="M19 17v4" />
+      <path d="M3 5h4" />
+      <path d="M17 19h4" />
+    </svg>
   );
 }

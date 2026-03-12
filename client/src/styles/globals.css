@@ -9,8 +9,32 @@
   --success: #22C55E;
   --warning: #F97316;
   --danger: #EF4444;
+
+  /* Light Mode */
   --surface: #F8F9FC;
+  --surface-card: #FFFFFF;
+  --surface-muted: #F1F3F9;
+  --surface-border: #E4E7F0;
+  
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  
   --sidebar-bg: #0F172A;
+}
+
+.dark {
+  /* Dark Mode */
+  --surface: #0F172A;
+  --surface-card: #1E293B;
+  --surface-muted: #334155;
+  --surface-border: #475569;
+  
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  
+  --sidebar-bg: #0B1120;
 }
 
 * {

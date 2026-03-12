@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -44,15 +45,15 @@ const config: Config = {
           600: "#DC2626",
         },
         surface: {
-          DEFAULT: "#F8F9FC",
-          card: "#FFFFFF",
-          muted: "#F1F3F9",
-          border: "#E4E7F0",
+          DEFAULT: "var(--surface)",
+          card: "var(--surface-card)",
+          muted: "var(--surface-muted)",
+          border: "var(--surface-border)",
         },
         text: {
-          primary: "#111827",
-          secondary: "#6B7280",
-          muted: "#9CA3AF",
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          muted: "var(--text-muted)",
         },
         sidebar: {
           bg: "#0F172A",
