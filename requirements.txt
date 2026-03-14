@@ -132,3 +132,6 @@ wcwidth==0.6.0
 websockets==16.0
 win32-setctime==1.2.0
 yarl==1.23.0
+gtts
+# google-genrativeai
+# google-genai
