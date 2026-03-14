@@ -23,14 +23,14 @@ model = genai.GenerativeModel("gemini-2.5-flash")
 # Generate summary
 response = model.generate_content([
     video_file,
-    "Summarize this video in Hindi in 10 short and simple sentences."
+    "Summarize this video in Marathi in 10 short and simple sentences."
 ])
 
 summary_text = response.text
 print(summary_text)
 
 # Convert to speech
-tts = gTTS(summary_text, lang="hi")
-tts.save("summary_audio-video-3-10-sent.mp3")
+tts = gTTS(summary_text, lang="mr")
+tts.save("summary_audio-video-3-10-sent-marathi.mp3")
 
 print("Audio saved as summary_audio.mp3")
