@@ -2,7 +2,7 @@
 -- EXTENSIONS
 -- =====================================
 
--- CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- =====================================
 -- TUTORS
@@ -55,7 +55,7 @@ CREATE TABLE students (
     board_id UUID REFERENCES new_boards(board_id),
     std_id UUID REFERENCES standards(std_id),
     student_name VARCHAR(255) NOT NULL,
-    phone VARCHAR(20),
+    mobile_number VARCHAR(13) UNIQUE NOT NULL CHECK (mobile_number ~ '^\+91[6-9][0-9]{9}$'),
     email VARCHAR(255),
     created_at TIMESTAMP DEFAULT NOW()
 );
@@ -83,7 +83,7 @@ CREATE TABLE batches (
     course_id UUID NOT NULL REFERENCES courses(course_id) ON DELETE CASCADE,
     tutor_id UUID NOT NULL REFERENCES tutors(tutor_id) ON DELETE CASCADE,
     batch_name VARCHAR(255) NOT NULL,
-    start_date DATE,
+    start_date DATE DEFAULT NOW(),
     end_date DATE
 );
 
@@ -136,7 +136,7 @@ CREATE TABLE tests (
     batch_id UUID NOT NULL REFERENCES batches(batch_id) ON DELETE CASCADE,
     subject_id UUID NOT NULL REFERENCES new_subjects(subject_id),
     test_date DATE NOT NULL,
-    max_marks INTEGER DEFAULT 100
+    max_marks INTEGER CHECK (max_marks >= 0 AND max_marks <= 100)
 );
 
 -- =====================================
@@ -184,7 +184,7 @@ CREATE TABLE fees (
     course_id UUID REFERENCES courses(course_id),
     amount NUMERIC(10,2) NOT NULL,
     due_date DATE NOT NULL,
-    status VARCHAR(50) -- Paid / Pending
+    status VARCHAR(50) -- Paid / Pending / Partly paid
 );
 
 -- =====================================
@@ -218,8 +218,8 @@ CREATE TABLE fee_receipts (
 
 CREATE TABLE enquiries (
     enquiry_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255),
-    phone VARCHAR(20),
+    full_name VARCHAR(255),
+    mobile_number VARCHAR(13) UNIQUE NOT NULL CHECK (mobile_number ~ '^\+91[6-9][0-9]{9}$'),
     subject VARCHAR(255),
     created_at TIMESTAMP DEFAULT NOW()
 );
