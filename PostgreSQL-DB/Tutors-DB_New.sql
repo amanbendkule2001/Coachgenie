@@ -311,3 +311,145 @@ CREATE INDEX idx_marks_student ON marks(student_id);
 CREATE INDEX idx_materials_subject ON materials(subject_id);
 CREATE INDEX idx_enrollments_student ON enrollments(student_id);
 CREATE INDEX idx_payments_fee ON payments(fee_id);
+
+-- =====================================
+-- ADDING DATA INTO THE DB
+-- =====================================
+
+--- ORGANIZATION DATA
+
+INSERT INTO organizations (org_name)
+VALUES ('SmartEdu Solo Tutors');
+
+SELECT * FROM organizations;
+
+-- TUTORS DATA
+
+INSERT INTO tutors (org_id, full_name, email, password_hash, mobile_number)
+VALUES 
+(
+    (SELECT org_id FROM organizations WHERE org_name='SmartEdu Solo Tutors'),
+    'Amit Sharma', 'amit@gmail.com', 'hashed_pass', '+919876543210'
+),
+(
+    (SELECT org_id FROM organizations WHERE org_name='SmartEdu Solo Tutors'),
+    'Neha Verma', 'neha@gmail.com', 'hashed_pass', '+919876543211'
+);
+
+SELECT * FROM tutors;
+
+--- BOARDS DATA
+
+INSERT INTO boards (board_name)
+VALUES ('CBSE'), ('ICSE'), ('State Board');
+
+SELECT * FROM boards;
+
+--- STANDARDS DATA
+
+INSERT INTO standards (board_id, std_name)
+VALUES
+((SELECT board_id FROM boards WHERE board_name='CBSE'), '8'),
+((SELECT board_id FROM boards WHERE board_name='CBSE'), '9'),
+((SELECT board_id FROM boards WHERE board_name='CBSE'), '10');
+
+SELECT * FROM standards;
+
+--- SUBJECTS DATA
+
+INSERT INTO subjects (std_id, subject_name)
+VALUES
+((SELECT std_id FROM standards WHERE std_name='8'), 'Mathematics'),
+((SELECT std_id FROM standards WHERE std_name='8'), 'Science'),
+((SELECT std_id FROM standards WHERE std_name='9'), 'Mathematics'),
+((SELECT std_id FROM standards WHERE std_name='10'), 'Physics');
+
+SELECT * FROM subjects;
+
+--- STUDENTS DATA
+
+INSERT INTO students (tutor_id, org_id, std_id, student_name, mobile_number, email)
+VALUES
+((SELECT tutor_id FROM tutors WHERE full_name='Amit Sharma'),
+ (SELECT org_id FROM organizations WHERE org_name='SmartEdu Solo Tutors'),
+ (SELECT std_id FROM standards WHERE std_name='8'),
+ 'Rahul Singh', '+919876543220', 'rahul@gmail.com'),
+
+((SELECT tutor_id FROM tutors WHERE full_name='Amit Sharma'),
+ (SELECT org_id FROM organizations WHERE org_name='SmartEdu Solo Tutors'),
+ (SELECT std_id FROM standards WHERE std_name='9'),
+ 'Rohit Sharma', '+919876543222', 'rohit@gmail.com'),
+
+((SELECT tutor_id FROM tutors WHERE full_name='Neha Verma'),
+ (SELECT org_id FROM organizations WHERE org_name='SmartEdu Solo Tutors'),
+ (SELECT std_id FROM standards WHERE std_name='10'),
+ 'Sneha Joshi', '+919876543225', 'sneha@gmail.com');
+
+ SELECT * FROM students;
+
+ --- COURSES DATA
+
+ INSERT INTO courses (tutor_id, title, description, price, duration_months)
+VALUES
+((SELECT tutor_id FROM tutors WHERE full_name='Amit Sharma'),
+ 'Class 8 Maths', 'Foundation Maths', 2000, 6),
+
+((SELECT tutor_id FROM tutors WHERE full_name='Neha Verma'),
+ 'Class 10 Physics', 'Board Prep', 3000, 6);
+
+ SELECT * FROM courses;
+
+ --- BATCHES DATA
+
+ INSERT INTO batches (course_id, batch_name, start_date, end_date)
+VALUES
+((SELECT course_id FROM courses WHERE title='Class 8 Maths'),
+ 'Batch A', DATE '2026-04-01', DATE '2026-10-01'),
+
+((SELECT course_id FROM courses WHERE title='Class 10 Physics'),
+ 'Batch B', DATE '2026-04-01', DATE '2026-10-01');
+
+ SELECT * FROM batches;
+
+ --- ENROLLMENTS DATA
+
+INSERT INTO enrollments (student_id, batch_id)
+SELECT s.student_id, b.batch_id
+FROM students s, batches b
+LIMIT 3;
+
+SELECT * FROM enrollments;
+
+--- TESTS DATA
+
+INSERT INTO tests (batch_id, subject_id, test_date)
+VALUES
+((SELECT batch_id FROM batches LIMIT 1),
+ (SELECT subject_id FROM subjects LIMIT 1),
+ DATE '2026-05-01');
+
+ SELECT * FROM tests;
+
+ --- MARKS DATA
+
+ INSERT INTO marks (test_id, student_id, score)
+SELECT 
+    (SELECT test_id FROM tests LIMIT 1),
+    student_id,
+    80
+FROM students
+LIMIT 3;
+
+SELECT * FROM marks;
+
+--- AI REPORTS DATA
+
+INSERT INTO ai_reports (student_id, report_type, report_data)
+SELECT student_id, 'weekly',
+'{"performance":"Good","weak_area":"Algebra"}'
+FROM students
+LIMIT 3;
+
+SELECT * FROM ai_reports;
+
+---
