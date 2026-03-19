@@ -11,6 +11,7 @@ conn = psycopg2.connect(
 cursor = conn.cursor()
 
 cursor.execute("select * from tutors")
+cursor.execute('select * from students')
 
 data = cursor.fetchall()
 
