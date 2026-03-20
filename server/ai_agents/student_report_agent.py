@@ -1,23 +1,44 @@
 import os
 from dotenv import load_dotenv
 from groq import Groq
+from sqlalchemy import MetaData, Table
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy import create_engine
 
 # Loading .env file from a specific path/folder
-load_dotenv(dotenv_path = "C:/Users/shoai/Downloads/Smart-Edu-Knowletive-Project/server/api's/.env")
+load_dotenv(dotenv_path = "C:/Users/shoai/Downloads/Smart-Edu-Knowletive-Project/server/api/.env")
+
+# Getting URL from .env file
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# Creating an engine & a connection
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind = engine)
+session = SessionLocal()
+
+# Reflecting existing tables
+Base = automap_base()
+Base.prepare(engine, reflect = True)
+
+# Access existing tables as ORM classes
+Student = Base.classes.students
+Marks = Base.classes.marks
 
 # Accessing groq_api_key
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# Later the data will come from the DataBase & will be fetched from there
-# Example student marks data
+# Fetching data from DB
+students = session.query(Student).all()
+
 student_data = {
-    "Batch": "Math Batch A",
-    "Students": [
-        {"name": "Ravi", "marks": [78, 85, 90]},
-        {"name": "Ananya", "marks": [55, 60, 58]},
-        {"name": "Suresh", "marks": [92, 88, 95]}
-    ]
+    "Batch" : "Math Batch A",
+    "Students" : []
 }
+
+for s in students:
+    marks = [m.score for m in session.query(Marks).filter(Marks.student_id == s.student_id).all()]
+    student_data['Students'].append({"name" : s.student_name, "marks": marks})
 
 prompt = f"""
 You are an education assistant. Analyze the following student marks data:
