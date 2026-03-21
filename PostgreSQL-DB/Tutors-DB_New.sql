@@ -453,3 +453,5 @@ LIMIT 3;
 SELECT * FROM ai_reports;
 
 ---
+
+--- 29 Relations made in this DataBase.
