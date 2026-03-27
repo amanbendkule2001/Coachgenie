@@ -51,7 +51,8 @@ export default function Modal({ isOpen, title, onClose, children, size = "md" }:
 
       {/* Modal Panel */}
       <div className={clsx(
-        "relative bg-white rounded-2xl shadow-2xl w-full animate-fade-in overflow-hidden",
+        "relative rounded-2xl shadow-2xl w-full animate-fade-in overflow-hidden",
+        "bg-[var(--surface-card)]",
         sizeMap[size]
       )}>
         {/* Header */}

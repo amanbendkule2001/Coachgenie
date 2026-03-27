@@ -17,14 +17,14 @@ export default function TutorDashboardPage() {
       <StatCards />
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Left column (75%) */}
-        <div className="lg:col-span-3 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column (2/3) */}
+        <div className="lg:col-span-2 space-y-6">
           <AlertsPanel />
           <ActivityFeed />
         </div>
 
-        {/* Right column (25%) */}
+        {/* Right column (1/3) */}
         <div className="space-y-6">
           <CalendarWidget />
           <AIInsightsPanel />

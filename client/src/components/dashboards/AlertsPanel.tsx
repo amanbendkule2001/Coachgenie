@@ -85,27 +85,28 @@ export default function AlertsPanel() {
             key={alert.id}
             href={alert.link}
             className={clsx(
-              "block p-3 rounded-xl border transition-all hover:-translate-y-0.5 hover:shadow-sm",
+              "block p-3 rounded-xl border-l-4 border border-surface-border bg-surface-muted transition-all hover:-translate-y-0.5 hover:shadow-sm",
               {
-                "bg-danger-50 border-danger-200 text-danger-700 hover:border-danger-300":
-                  alert.type === "danger",
-                "bg-warning-50 border-warning-200 text-warning-700 hover:border-warning-300":
-                  alert.type === "warning",
-                "bg-success-50 border-success-200 text-success-700 hover:border-success-300":
-                  alert.type === "success",
+                "border-l-danger-500": alert.type === "danger",
+                "border-l-warning-500": alert.type === "warning",
+                "border-l-success-500": alert.type === "success",
               }
             )}
           >
             <div className="flex items-start justify-between gap-3 mb-1">
-              <div className="flex items-center gap-2 font-semibold text-sm">
-                <AlertCircle size={14} />
+              <div className={clsx("flex items-center gap-2 font-semibold text-sm text-text-primary")}>
+                <AlertCircle size={14} className={clsx({
+                  "text-danger-500": alert.type === "danger",
+                  "text-warning-500": alert.type === "warning",
+                  "text-success-500": alert.type === "success",
+                })} />
                 {alert.title}
               </div>
-              <span className="text-[10px] font-medium opacity-70 flex items-center gap-1 shrink-0">
+              <span className="text-[10px] font-medium text-text-muted flex items-center gap-1 shrink-0">
                 <Clock size={10} /> {alert.time}
               </span>
             </div>
-            <p className="text-xs opacity-90 leading-relaxed">{alert.desc}</p>
+            <p className="text-xs text-text-secondary leading-relaxed">{alert.desc}</p>
           </Link>
         ))}
       </div>

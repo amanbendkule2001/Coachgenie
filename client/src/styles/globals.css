@@ -15,12 +15,16 @@
   --surface-card: #FFFFFF;
   --surface-muted: #F1F3F9;
   --surface-border: #E4E7F0;
-  
+
   --text-primary: #111827;
   --text-secondary: #6B7280;
   --text-muted: #9CA3AF;
-  
+
   --sidebar-bg: #0F172A;
+
+  --scrollbar-track: #F1F3F9;
+  --scrollbar-thumb: #CBD5E1;
+  --scrollbar-thumb-hover: #94A3B8;
 }
 
 .dark {
@@ -29,12 +33,16 @@
   --surface-card: #1E293B;
   --surface-muted: #334155;
   --surface-border: #475569;
-  
+
   --text-primary: #F8FAFC;
   --text-secondary: #CBD5E1;
   --text-muted: #94A3B8;
-  
+
   --sidebar-bg: #0B1120;
+
+  --scrollbar-track: #1E293B;
+  --scrollbar-thumb: #475569;
+  --scrollbar-thumb-hover: #64748B;
 }
 
 * {
@@ -47,8 +55,8 @@ html,
 body {
   height: 100%;
   font-family: 'Inter', system-ui, sans-serif;
-  background-color: #F8F9FC;
-  color: #111827;
+  background-color: var(--surface);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -59,19 +67,20 @@ body {
   height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #F1F3F9;
+  background: var(--scrollbar-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: var(--scrollbar-thumb);
   border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: var(--scrollbar-thumb-hover);
 }
 
 @layer components {
   .stat-card {
-    @apply bg-white rounded-2xl p-5 shadow-card border border-surface-border flex items-start gap-4 transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5;
+    background-color: var(--surface-card);
+    @apply rounded-2xl p-5 shadow-card border border-surface-border flex items-start gap-4 transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5;
   }
 
   .stat-icon-box {
@@ -95,7 +104,8 @@ body {
   }
 
   .page-card {
-    @apply bg-white rounded-2xl shadow-card border border-surface-border p-6 animate-fade-in;
+    background-color: var(--surface-card);
+    @apply rounded-2xl shadow-card border border-surface-border p-6 animate-fade-in;
   }
 
   .table-header {

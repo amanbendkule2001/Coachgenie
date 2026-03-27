@@ -167,7 +167,7 @@ export default function CertificatesPage() {
                   )}
 
                   {deleteId === c.id ? (
-                    <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-surface-border">
+                    <div className="flex items-center gap-1 bg-[var(--surface-card)] p-1 rounded-lg border border-surface-border">
                       <button
                         onClick={() => { persist(certs.filter((x) => x.id !== c.id)); setDeleteId(null); }}
                         className="text-[10px] font-bold px-2 py-1 bg-danger-500 text-white rounded"

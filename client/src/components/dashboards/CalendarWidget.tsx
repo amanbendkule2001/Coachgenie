@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, MapPin, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { loadFromStorage } from "@/lib/storage";
 import { Activity } from "@/types";
 import clsx from "clsx";
@@ -12,11 +12,13 @@ const TYPE_COLORS: Record<Activity["type"], string> = {
   Activity: "bg-success-500",
   Test:     "bg-warning-500",
 };
+
+// Opacity-based badge colors — work in both light and dark mode
 const BADGE_COLORS: Record<Activity["type"], string> = {
-  Holiday:  "bg-danger-50 text-danger-700 border-danger-200",
-  Event:    "bg-primary-50 text-primary-700 border-primary-200",
-  Activity: "bg-success-50 text-success-700 border-success-200",
-  Test:     "bg-warning-50 text-warning-700 border-warning-200",
+  Holiday:  "bg-danger-500/20 text-danger-400 border-danger-500/30",
+  Event:    "bg-primary-500/20 text-primary-400 border-primary-500/30",
+  Activity: "bg-success-500/20 text-success-400 border-success-500/30",
+  Test:     "bg-warning-500/20 text-warning-500 border-warning-500/30",
 };
 
 export default function CalendarWidget() {
@@ -49,7 +51,7 @@ export default function CalendarWidget() {
   const selectedEvents = selectedDate ? getDayEvents(selectedDate) : [];
 
   return (
-    <div className="page-card h-full flex flex-col animate-fade-in">
+    <div className="page-card flex flex-col animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
           <CalendarIcon size={18} className="text-primary-500" />
@@ -91,7 +93,7 @@ export default function CalendarWidget() {
                     isSelected
                       ? "bg-primary-500 text-white shadow-md shadow-primary-500/30 scale-105 z-10"
                       : isToday
-                      ? "bg-primary-50 text-primary-700 hover:bg-primary-100 font-bold"
+                      ? "bg-primary-500/20 text-primary-400 hover:bg-primary-500/30 font-bold"
                       : "text-text-primary hover:bg-surface-muted"
                   )}
                 >
@@ -105,7 +107,7 @@ export default function CalendarWidget() {
                           key={idx}
                           className={clsx(
                             "w-1.5 h-1.5 rounded-full",
-                            isSelected ? "bg-white" : TYPE_COLORS[e.type]
+                            isSelected ? "bg-white/70" : TYPE_COLORS[e.type]
                           )}
                         />
                       ))}
@@ -121,7 +123,7 @@ export default function CalendarWidget() {
       </div>
 
       {/* Selected Day View */}
-      <div className="mt-auto pt-4 border-t border-surface-border">
+      <div className="pt-4 border-t border-surface-border">
         {selectedDate ? (
           <div>
             <p className="text-sm font-bold text-text-primary mb-3">
@@ -136,7 +138,7 @@ export default function CalendarWidget() {
                 selectedEvents.map((evt) => (
                   <div
                     key={evt.id}
-                    className="flex justify-between items-center p-3 rounded-xl border border-surface-border hover:shadow-sm transition-shadow bg-white"
+                    className="flex justify-between items-center p-3 rounded-xl border border-surface-border hover:shadow-sm transition-shadow bg-[var(--surface-card)]"
                   >
                     <div className="flex-1 min-w-0 pr-3">
                       <p className="text-sm font-semibold text-text-primary truncate">

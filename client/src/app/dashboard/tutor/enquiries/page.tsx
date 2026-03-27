@@ -108,8 +108,8 @@ export default function EnquiriesPage() {
               {/* Stage dropdown */}
               <div className="relative">
                 <select value={e.stage} onChange={ev => updateStage(e.id, ev.target.value as Enquiry["stage"])}
-                  className={clsx("badge border pr-6 appearance-none cursor-pointer", STAGE_COLORS[e.stage])}>
-                  {STAGES.map(s=><option key={s}>{s}</option>)}
+                  className={clsx("badge border pr-6 appearance-none cursor-pointer bg-[var(--surface-card)]", STAGE_COLORS[e.stage])}>
+                  {STAGES.map(s=><option key={s} className="bg-[var(--surface-card)] text-[var(--text-primary)]">{s}</option>)}
                 </select>
                 <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"/>
               </div>

@@ -98,7 +98,7 @@ export default function TodoPage() {
             {(["All","Active","Completed"] as const).map(f => (
               <button key={f} onClick={()=>setFilter(f)}
                 className={clsx("px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors",
-                  filter===f ? "bg-white shadow-sm text-text-primary border border-surface-border" : "text-text-muted hover:bg-surface-muted")}>
+                  filter===f ? "bg-[var(--surface-card)] shadow-sm text-text-primary border border-surface-border" : "text-text-muted hover:bg-surface-muted")}>
                 {f} {f==="All"?stats.total : f==="Active"?stats.active : stats.completed}
               </button>
             ))}

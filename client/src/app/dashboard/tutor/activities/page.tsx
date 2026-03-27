@@ -118,12 +118,12 @@ export default function ActivitiesPage() {
                       {/* Hover action overlay */}
                       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         {deleteId === a.id ? (
-                          <div className="flex gap-1 bg-white p-1 rounded-lg shadow-sm border border-surface-border">
+                          <div className="flex gap-1 bg-[var(--surface-card)] p-1 rounded-lg shadow-sm border border-surface-border">
                             <button onClick={()=> {persist(activities.filter(x=>x.id!==a.id)); setDeleteId(null);}} className="text-xs px-2 bg-danger-500 text-white rounded">Yes</button>
                             <button onClick={()=>setDeleteId(null)} className="text-xs px-2 bg-surface-muted text-text-muted rounded">No</button>
                           </div>
                         ) : (
-                          <button onClick={()=>setDeleteId(a.id)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white shadow-sm border border-surface-border text-text-muted hover:text-danger-500 hover:bg-danger-50 transition-colors">
+                          <button onClick={()=>setDeleteId(a.id)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--surface-card)] shadow-sm border border-surface-border text-text-muted hover:text-danger-500 hover:bg-danger-50 transition-colors">
                             <Trash2 size={14}/>
                           </button>
                         )}
