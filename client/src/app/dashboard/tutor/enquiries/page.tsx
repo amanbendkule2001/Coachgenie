@@ -18,10 +18,10 @@ const SEED: Enquiry[] = [
 const STAGES: Enquiry["stage"][] = ["New","Contacted","Interested","Converted","Rejected"];
 
 const STAGE_COLORS: Record<Enquiry["stage"], string> = {
-  New:        "bg-primary-50 text-primary-600 border-primary-200",
-  Contacted:  "bg-warning-50 text-warning-600 border-warning-200",
-  Interested: "bg-success-50 text-success-600 border-success-200",
-  Converted:  "bg-success-100 text-success-700 border-success-300",
+  New:        "bg-primary-500/20 text-primary-400 border-primary-500/30",
+  Contacted:  "bg-warning-500/20 text-warning-500 border-warning-500/30",
+  Interested: "bg-success-500/20 text-success-400 border-success-500/30",
+  Converted:  "bg-success-500/30 text-success-300 border-success-500/40",
   Rejected:   "bg-surface-muted text-text-muted border-surface-border",
 };
 

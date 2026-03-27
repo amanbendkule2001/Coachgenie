@@ -17,9 +17,9 @@ const SEED: Todo[] = [
 const PRIORITIES: Todo["priority"][] = ["Low", "Medium", "High"];
 
 const PRIORITY_COLORS: Record<Todo["priority"], { text: string; bg: string; badge: string; icon: React.ReactNode }> = {
-  High:   { text:"text-danger-600",  bg:"bg-danger-50",   badge:"bg-danger-100 text-danger-700 border-danger-200",     icon:<AlertCircle size={14}/> },
-  Medium: { text:"text-warning-600", bg:"bg-warning-50",  badge:"bg-warning-100 text-warning-700 border-warning-200",  icon:<AlertCircle size={14}/> },
-  Low:    { text:"text-primary-600", bg:"bg-primary-50",  badge:"bg-primary-100 text-primary-700 border-primary-200",  icon:<Sparkles size={14}/> },
+  High:   { text:"text-danger-400",  bg:"bg-danger-500/20",   badge:"bg-danger-500/20 text-danger-400 border-danger-500/30",     icon:<AlertCircle size={14}/> },
+  Medium: { text:"text-warning-500", bg:"bg-warning-500/20",  badge:"bg-warning-500/20 text-warning-500 border-warning-500/30",  icon:<AlertCircle size={14}/> },
+  Low:    { text:"text-primary-400", bg:"bg-primary-500/20",  badge:"bg-primary-500/20 text-primary-400 border-primary-500/30",  icon:<Sparkles size={14}/> },
 };
 
 export default function TodoPage() {
@@ -61,7 +61,7 @@ export default function TodoPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-text-primary flex items-center gap-2">

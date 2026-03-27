@@ -55,7 +55,7 @@ export default function AlertsPanel() {
 
   if (alerts.length === 0) {
     return (
-      <div className="page-card h-full flex flex-col">
+      <div className="page-card flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-bold text-text-primary">Alerts & Reminders</h2>
         </div>
@@ -69,7 +69,7 @@ export default function AlertsPanel() {
   }
 
   return (
-    <div className="page-card h-full flex flex-col animate-fade-in">
+    <div className="page-card flex flex-col animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-bold text-text-primary flex items-center gap-2">
           Alerts & Reminders

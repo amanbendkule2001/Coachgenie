@@ -46,8 +46,8 @@ export default function StatCards() {
       value: stats.totalStudents.toString(),
       subtext: "Enrolled",
       icon: Users,
-      iconBg: "bg-primary-50",
-      iconColor: "text-primary-500",
+      iconBg: "bg-primary-500/20",
+      iconColor: "text-primary-400",
       borderColor: "border-l-primary-500",
     },
     {
@@ -55,8 +55,8 @@ export default function StatCards() {
       value: stats.activeCourses.toString(),
       subtext: "Running batches",
       icon: BookOpen,
-      iconBg: "bg-success-50",
-      iconColor: "text-success-600",
+      iconBg: "bg-success-500/20",
+      iconColor: "text-success-400",
       borderColor: "border-l-success-500",
     },
     {
@@ -64,8 +64,8 @@ export default function StatCards() {
       value: stats.upcomingClasses.toString(),
       subtext: "Tests & Activities",
       icon: CalendarClock,
-      iconBg: "bg-warning-50",
-      iconColor: "text-warning-600",
+      iconBg: "bg-warning-500/20",
+      iconColor: "text-warning-500",
       borderColor: "border-l-warning-500",
     },
     {
@@ -73,8 +73,8 @@ export default function StatCards() {
       value: fmt(stats.pendingFees),
       subtext: `${stats.overdueStudents} students overdue`,
       icon: IndianRupee,
-      iconBg: "bg-danger-50",
-      iconColor: "text-danger-500",
+      iconBg: "bg-danger-500/20",
+      iconColor: "text-danger-400",
       borderColor: "border-l-danger-500",
     },
   ];

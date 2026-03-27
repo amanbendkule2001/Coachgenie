@@ -5,24 +5,24 @@ const timeSlots = ["8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "2:
 
 const classes: Record<string, Record<string, { subject: string; batch: string; color: string }>> = {
   Monday: {
-    "9:00 AM": { subject: "JEE Mathematics", batch: "Batch A", color: "bg-primary-50 border-primary-300 text-primary-700" },
-    "2:00 PM": { subject: "NEET Biology", batch: "Batch B", color: "bg-success-50 border-success-300 text-success-700" },
+    "9:00 AM": { subject: "JEE Mathematics", batch: "Batch A", color: "bg-primary-500/20 border-primary-500/30 text-primary-400" },
+    "2:00 PM": { subject: "NEET Biology", batch: "Batch B", color: "bg-success-500/20 border-success-500/30 text-success-400" },
   },
   Tuesday: {
-    "10:00 AM": { subject: "JEE Physics", batch: "Batch C", color: "bg-warning-50 border-warning-300 text-warning-700" },
-    "4:00 PM": { subject: "Board Chemistry", batch: "Batch B", color: "bg-danger-50 border-danger-300 text-danger-700" },
+    "10:00 AM": { subject: "JEE Physics", batch: "Batch C", color: "bg-warning-500/20 border-warning-500/30 text-warning-500" },
+    "4:00 PM": { subject: "Board Chemistry", batch: "Batch B", color: "bg-danger-500/20 border-danger-500/30 text-danger-400" },
   },
   Wednesday: {
-    "9:00 AM": { subject: "Crash Course Maths", batch: "Batch D", color: "bg-primary-50 border-primary-300 text-primary-700" },
-    "3:00 PM": { subject: "JEE Mathematics", batch: "Batch A", color: "bg-primary-50 border-primary-300 text-primary-700" },
+    "9:00 AM": { subject: "Crash Course Maths", batch: "Batch D", color: "bg-primary-500/20 border-primary-500/30 text-primary-400" },
+    "3:00 PM": { subject: "JEE Mathematics", batch: "Batch A", color: "bg-primary-500/20 border-primary-500/30 text-primary-400" },
   },
   Thursday: {
-    "11:00 AM": { subject: "NEET Biology", batch: "Batch B", color: "bg-success-50 border-success-300 text-success-700" },
-    "5:00 PM": { subject: "JEE Physics", batch: "Batch C", color: "bg-warning-50 border-warning-300 text-warning-700" },
+    "11:00 AM": { subject: "NEET Biology", batch: "Batch B", color: "bg-success-500/20 border-success-500/30 text-success-400" },
+    "5:00 PM": { subject: "JEE Physics", batch: "Batch C", color: "bg-warning-500/20 border-warning-500/30 text-warning-500" },
   },
   Friday: {
-    "9:00 AM": { subject: "Board Chemistry", batch: "Batch B", color: "bg-danger-50 border-danger-300 text-danger-700" },
-    "2:00 PM": { subject: "Crash Course Maths", batch: "Batch D", color: "bg-primary-50 border-primary-300 text-primary-700" },
+    "9:00 AM": { subject: "Board Chemistry", batch: "Batch B", color: "bg-danger-500/20 border-danger-500/30 text-danger-400" },
+    "2:00 PM": { subject: "Crash Course Maths", batch: "Batch D", color: "bg-primary-500/20 border-primary-500/30 text-primary-400" },
   },
   Saturday: {
     "10:00 AM": { subject: "Full Test – All Batches", batch: "All", color: "bg-surface-muted border-surface-border text-text-primary" },

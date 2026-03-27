@@ -106,7 +106,7 @@ export default function CertificatesPage() {
               key={c.id}
               className={clsx(
                 "relative page-card !p-0 overflow-hidden group border",
-                c.status === "Issued" ? "border-surface-border" : "border-warning-200 bg-warning-50/20"
+                c.status === "Issued" ? "border-surface-border" : "border-warning-500/30 bg-warning-500/10"
               )}
             >
               {/* Decorative side bar */}
@@ -127,8 +127,8 @@ export default function CertificatesPage() {
                     className={clsx(
                       "badge border flex items-center gap-1",
                       c.status === "Issued"
-                        ? "bg-success-50 text-success-700 border-success-200"
-                        : "bg-warning-50 text-warning-700 border-warning-200"
+                        ? "bg-success-500/20 text-success-400 border-success-500/30"
+                        : "bg-warning-500/20 text-warning-500 border-warning-500/30"
                     )}
                   >
                     {c.status === "Issued" ? <CheckCircle size={10} /> : <Clock size={10} />}

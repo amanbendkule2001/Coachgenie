@@ -35,7 +35,7 @@ export default function ActivityFeed() {
       time: s.joinDate,
       dateVal: new Date(s.joinDate).getTime(),
       icon: <UserPlus size={16} />,
-      bgClass: "bg-success-100 text-success-600",
+      bgClass: "bg-success-500/20 text-success-400",
     }));
 
     // Recent Courses
@@ -46,7 +46,7 @@ export default function ActivityFeed() {
       time: c.startDate,
       dateVal: new Date(c.startDate).getTime(),
       icon: <BookOpen size={16} />,
-      bgClass: "bg-primary-100 text-primary-600",
+      bgClass: "bg-primary-500/20 text-primary-400",
     }));
 
     // Recent Completed Payments
@@ -57,7 +57,7 @@ export default function ActivityFeed() {
       time: p.lastPaidDate !== "—" ? p.lastPaidDate : p.dueDate,
       dateVal: new Date(p.lastPaidDate !== "—" ? p.lastPaidDate : p.dueDate).getTime(),
       icon: <CreditCard size={16} />,
-      bgClass: "bg-warning-100 text-warning-600",
+      bgClass: "bg-warning-500/20 text-warning-500",
     }));
 
     // Recent Materials
@@ -68,7 +68,7 @@ export default function ActivityFeed() {
       time: m.uploadDate,
       dateVal: new Date(m.uploadDate).getTime(),
       icon: <Upload size={16} />,
-      bgClass: "bg-purple-100 text-purple-600",
+      bgClass: "bg-purple-500/20 text-purple-400",
     }));
 
     // Sort descending by date, take top 6
@@ -77,7 +77,7 @@ export default function ActivityFeed() {
   }, []);
 
   return (
-    <div className="page-card h-full flex flex-col animate-fade-in">
+    <div className="page-card flex flex-col animate-fade-in">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-base font-bold text-text-primary">Recent Activity</h2>
       </div>
@@ -100,7 +100,7 @@ export default function ActivityFeed() {
                 <div className="relative z-10">
                   <div
                     className={clsx(
-                      "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border-[3px] border-white transition-transform group-hover:scale-110",
+                      "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110",
                       item.bgClass
                     )}
                   >

@@ -37,7 +37,7 @@ export default function AIInsightsPanel() {
   }, []);
 
   return (
-    <div className="page-card h-full flex flex-col relative overflow-hidden animate-fade-in group">
+    <div className="page-card flex flex-col relative overflow-hidden animate-fade-in group">
       {/* Background glow for AI vibe */}
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-500/10 rounded-full blur-3xl group-hover:bg-primary-500/20 transition-colors" />
 
@@ -46,7 +46,7 @@ export default function AIInsightsPanel() {
           <SparklesIcon />
           Performance Insights
         </h2>
-        <span className="badge bg-primary-50 text-primary-700 border-primary-200">Live AI</span>
+        <span className="badge bg-primary-500/20 text-primary-400 border-primary-500/30">Live AI</span>
       </div>
 
       {data.loading ? (
@@ -81,8 +81,8 @@ export default function AIInsightsPanel() {
 
           <div className="grid grid-cols-2 gap-3">
             {/* Risk Card */}
-            <div className="bg-danger-50 border border-danger-100 rounded-2xl p-3 flex flex-col justify-between transition-colors hover:bg-danger-100/50">
-              <div className="flex items-center gap-2 mb-2 text-danger-600">
+            <div className="bg-danger-500/10 border border-danger-500/30 rounded-2xl p-3 flex flex-col justify-between transition-colors hover:bg-danger-500/20">
+              <div className="flex items-center gap-2 mb-2 text-danger-400">
                 <AlertTriangle size={16} />
                 <span className="text-xs font-semibold uppercase tracking-wider">Requires Focus</span>
               </div>
@@ -93,8 +93,8 @@ export default function AIInsightsPanel() {
             </div>
 
             {/* Top Performers Card */}
-            <div className="bg-success-50 border border-success-100 rounded-2xl p-3 flex flex-col justify-between transition-colors hover:bg-success-100/50">
-              <div className="flex items-center gap-2 mb-2 text-success-600">
+            <div className="bg-success-500/10 border border-success-500/30 rounded-2xl p-3 flex flex-col justify-between transition-colors hover:bg-success-500/20">
+              <div className="flex items-center gap-2 mb-2 text-success-400">
                 <Target size={16} />
                 <span className="text-xs font-semibold uppercase tracking-wider">Top Tier</span>
               </div>
