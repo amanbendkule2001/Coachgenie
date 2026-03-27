@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Settings, LogOut, Search, ChevronDown } from "lucide-react";
+import { Bell, Settings, LogOut, Search, ChevronDown, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -266,6 +266,18 @@ export default function TopHeader({ tutorName }: TopHeaderProps) {
           )}
         </div>
 
+        {/* Dark Mode Toggle — inline in navbar */}
+        <button
+          onClick={toggleDarkMode}
+          title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-surface-muted transition-colors duration-200 group"
+        >
+          {isDarkMode
+            ? <Sun size={18} className="text-warning-400 group-hover:text-warning-300 transition-colors" />
+            : <Moon size={18} className="text-text-secondary group-hover:text-primary-500 transition-colors" />
+          }
+        </button>
+
         {/* Settings */}
         <div className="relative">
           <button 
@@ -283,16 +295,6 @@ export default function TopHeader({ tutorName }: TopHeaderProps) {
                   <p className="text-sm font-bold text-text-primary">Quick Settings</p>
                 </div>
                 <div className="p-2 space-y-1">
-                  <div className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-surface-muted transition-colors cursor-pointer" onClick={toggleDarkMode}>
-                    <div className="flex flex-col">
-                      <p className="text-sm font-semibold text-text-primary">Dark Mode</p>
-                      <p className="text-xs text-text-secondary">Toggle app theme</p>
-                    </div>
-                    {/* Toggle switch visual */}
-                    <div className={`w-10 h-5 rounded-full relative transition-colors ${isDarkMode ? 'bg-primary-500' : 'bg-surface-border'}`}>
-                      <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow-sm ${isDarkMode ? 'left-5.5 right-0.5 translate-x-5' : 'left-0.5 translate-x-0'}`} />
-                    </div>
-                  </div>
                   <div className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-surface-muted transition-colors cursor-pointer">
                     <div className="flex flex-col">
                       <p className="text-sm font-semibold text-text-primary">Email Alerts</p>
