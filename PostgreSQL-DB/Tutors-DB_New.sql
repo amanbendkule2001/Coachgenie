@@ -455,3 +455,16 @@ SELECT * FROM ai_reports;
 ---
 
 --- 29 Relations made in this DataBase.
+
+-- -- =====================================
+-- -- DJANGO MIGRATIONS
+-- -- =====================================
+
+-- CREATE TABLE django_migrations (
+--     id SERIAL PRIMARY KEY,
+--     app VARCHAR(255) NOT NULL,
+--     name VARCHAR(255) NOT NULL,
+--     applied TIMESTAMP WITH TIME ZONE NOT NULL
+-- );
+
+SELECT * FROM information_schema.tables WHERE table_name = 'django_migrations';
