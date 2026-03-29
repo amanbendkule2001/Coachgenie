@@ -25,4 +25,4 @@ class StudentSummarySerializer(serializers.ModelSerializer):
     """Lightweight serializer for dropdowns / nested references."""
     class Meta:
         model  = Student
-        fields = ["id", "name", "grade", "subject", "status", "score"]
+        fields = ["id", "name", "grade", "subject", "status", "score", "created_at", "updated_at"]
