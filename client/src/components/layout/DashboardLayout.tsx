@@ -1,5 +1,6 @@
 import Sidebar from "@/components/layout/Sidebar";
 import TopHeader from "@/components/layout/TopHeader";
+import ToastContainer from "@/components/ui/Toast";
 
 export default function DashboardLayout({
   children,
@@ -15,6 +16,7 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+      <ToastContainer />
     </div>
   );
 }

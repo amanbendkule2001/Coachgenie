@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, MessageSquare, Trash2, Pencil, Phone, Mail, ChevronDown } from "lucide-react";
 import { getAll, createOne, updateOne, deleteOne } from "@/lib/storage";
+import { showToast } from "@/components/ui/Toast";
 import { Enquiry } from "@/types";
 import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
@@ -40,7 +41,7 @@ export default function EnquiriesPage() {
         const data = await getAll("enquiries");
         setEnquiries(data);
       } catch {
-        alert("Failed to load enquiries. Please try again.");
+        showToast("Failed to load enquiries. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -74,7 +75,7 @@ export default function EnquiriesPage() {
       }
       setModal(false);
     } catch {
-      alert("Failed to save enquiry. Please try again.");
+      showToast("Failed to save enquiry. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -85,7 +86,7 @@ export default function EnquiriesPage() {
       const updated = await updateOne("enquiries", Number(id), { stage });
       setEnquiries(prev => prev.map(e => e.id === id ? { ...e, ...updated } : e));
     } catch {
-      alert("Failed to update stage. Please try again.");
+      showToast("Failed to update stage. Please try again.");
     }
   };
 
@@ -95,7 +96,7 @@ export default function EnquiriesPage() {
       setEnquiries(prev => prev.filter(e => e.id !== id));
       setDeleteId(null);
     } catch {
-      alert("Failed to delete enquiry. Please try again.");
+      showToast("Failed to delete enquiry. Please try again.");
     }
   };
 

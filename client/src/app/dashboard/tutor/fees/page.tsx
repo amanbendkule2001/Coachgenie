@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, CreditCard, Trash2, CheckCircle, AlertCircle, Clock, Pencil } from "lucide-react";
 import { getAll, createOne, updateOne, deleteOne } from "@/lib/storage";
+import { showToast } from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
 
@@ -71,7 +72,7 @@ export default function FeesPage() {
         setPayments(feesData);
         setStudents(studentsData);
       } catch {
-        alert("Failed to load fees. Please try again.");
+        showToast("Failed to load fees. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -96,7 +97,7 @@ export default function FeesPage() {
       setPayments(prev => [...prev, created]);
       setModal(false);
     } catch {
-      alert("Failed to record payment. Please try again.");
+      showToast("Failed to record payment. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -111,7 +112,7 @@ export default function FeesPage() {
       setEditModal(false);
       setEditing(null);
     } catch {
-      alert("Failed to update payment. Please try again.");
+      showToast("Failed to update payment. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -123,7 +124,7 @@ export default function FeesPage() {
       setPayments(prev => prev.filter(p => p.id !== id));
       setDeleteId(null);
     } catch {
-      alert("Failed to delete payment record. Please try again.");
+      showToast("Failed to delete payment record. Please try again.");
     }
   };
 

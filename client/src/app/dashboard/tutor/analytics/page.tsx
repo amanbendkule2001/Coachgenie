@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { BrainCircuit, TrendingDown, TrendingUp, BarChart2, Star, AlertTriangle, Users } from "lucide-react";
+import { showToast } from "@/components/ui/Toast";
 
 const BASE_URL = "http://localhost:8000/api";
 
@@ -75,7 +76,7 @@ export default function AnalyticsPage() {
         setRevenue(revData);
         setEnquiries(enqData);
       } catch {
-        alert("Failed to load analytics. Please try again.");
+        showToast("Failed to load analytics. Please try again.");
       } finally {
         setLoading(false);
       }

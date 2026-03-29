@@ -115,16 +115,29 @@ export default function TopHeader({ tutorName }: TopHeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [displayName, setDisplayName] = useState(tutorName ?? "Mr. Sharma");
+  const [displayName, setDisplayName] = useState(tutorName ?? "");
   
   const { query, setQuery, results, isOpen, setIsOpen } = useGlobalSearch();
 
   useEffect(() => {
+    // Read name from localStorage (set during login)
     const stored = localStorage.getItem("tutorName");
-    if (stored) setDisplayName(stored);
+    if (stored) {
+      setDisplayName(stored);
+    } else {
+      // Try to parse from the JWT access token
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          const name = payload.name ?? payload.full_name ?? payload.username ?? "";
+          if (name) { setDisplayName(name); localStorage.setItem("tutorName", name); }
+        } catch {}
+      }
+    }
 
     // Initialize dark mode
-    if (localStorage.getItem("theme") === "dark" || 
+    if (localStorage.getItem("theme") === "dark" ||
        (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
       setIsDarkMode(true);
       document.documentElement.classList.add("dark");

@@ -22,8 +22,9 @@ const BADGE_COLORS: Record<Activity["type"], string> = {
 };
 
 export default function CalendarWidget() {
-  const [currentDate, setCurrentDate] = useState(new Date("2026-03-10"));
-  const [selectedDate, setSelectedDate] = useState<number | null>(10);
+  const today = new Date();
+  const [currentDate, setCurrentDate] = useState(today);
+  const [selectedDate, setSelectedDate] = useState<number | null>(today.getDate());
   const [activities, setActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
@@ -86,7 +87,7 @@ export default function CalendarWidget() {
         ))}
 
         {days.map((day, i) => {
-          const isToday = day === 10 && month === 2 && year === 2026;
+          const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
           const isSelected = day === selectedDate;
           const evts = day ? getDayEvents(day) : [];
 

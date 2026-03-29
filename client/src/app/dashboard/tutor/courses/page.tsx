@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, BookOpen, Users, ChevronDown, ChevronUp, BarChart2 } from "lucide-react";
 import { getAll, createOne, updateOne, deleteOne } from "@/lib/storage";
+import { showToast } from "@/components/ui/Toast";
 import { Course, Student } from "@/types";
 import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
@@ -41,7 +42,7 @@ export default function CoursesPage() {
         setCourses(coursesData);
         setStudents(studentsData);
       } catch {
-        alert("Failed to load courses. Please try again.");
+        showToast("Failed to load courses. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -59,7 +60,7 @@ export default function CoursesPage() {
       setForm(BLANK);
       setSelectedStudentIds([]);
     } catch {
-      alert("Failed to create course. Please try again.");
+      showToast("Failed to create course. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -71,7 +72,7 @@ export default function CoursesPage() {
       setCourses(prev => prev.filter(c => c.id !== id));
       setDeleteId(null);
     } catch {
-      alert("Failed to delete course. Please try again.");
+      showToast("Failed to delete course. Please try again.");
     }
   };
 

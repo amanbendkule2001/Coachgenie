@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Plus, CheckSquare, Trash2, Calendar, AlertCircle, Sparkles } from "lucide-react";
 import { getAll, createOne, updateOne, deleteOne } from "@/lib/storage";
+import { showToast } from "@/components/ui/Toast";
 import { Todo } from "@/types";
 import clsx from "clsx";
 
@@ -28,7 +29,7 @@ export default function TodoPage() {
         const data = await getAll("todos");
         setTodos(data);
       } catch {
-        alert("Failed to load tasks. Please try again.");
+        showToast("Failed to load tasks. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -51,7 +52,7 @@ export default function TodoPage() {
       setNewTask("");
       setNewPriority("Medium");
     } catch {
-      alert("Failed to add task. Please try again.");
+      showToast("Failed to add task. Please try again.");
     } finally {
       setAddingSaving(false);
     }
@@ -62,7 +63,7 @@ export default function TodoPage() {
       const updated = await updateOne("todos", Number(todo.id), { completed: !todo.completed });
       setTodos(prev => prev.map(t => t.id === todo.id ? { ...t, ...updated } : t));
     } catch {
-      alert("Failed to update task. Please try again.");
+      showToast("Failed to update task. Please try again.");
     }
   };
 
@@ -71,7 +72,7 @@ export default function TodoPage() {
       await deleteOne("todos", Number(id));
       setTodos(prev => prev.filter(t => t.id !== id));
     } catch {
-      alert("Failed to delete task. Please try again.");
+      showToast("Failed to delete task. Please try again.");
     }
   };
 
@@ -81,7 +82,7 @@ export default function TodoPage() {
       await Promise.all(completed.map(t => deleteOne("todos", Number(t.id))));
       setTodos(prev => prev.filter(t => !t.completed));
     } catch {
-      alert("Failed to clear completed tasks. Please try again.");
+      showToast("Failed to clear completed tasks. Please try again.");
     }
   };
 

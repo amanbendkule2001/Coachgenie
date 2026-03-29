@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Award, Trash2, Download, CheckCircle, Clock } from "lucide-react";
 import { getAll, createOne, deleteOne } from "@/lib/storage";
+import { showToast } from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
 
@@ -62,7 +63,7 @@ export default function CertificatesPage() {
         setStudents(studentsData);
         setCourses(coursesData);
       } catch {
-        alert("Failed to load certificates. Please try again.");
+        showToast("Failed to load certificates. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -87,7 +88,7 @@ export default function CertificatesPage() {
       setModal(false);
       setForm(BLANK);
     } catch {
-      alert("Failed to issue certificate. Please try again.");
+      showToast("Failed to issue certificate. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -99,7 +100,7 @@ export default function CertificatesPage() {
       setCerts(prev => prev.filter(c => c.id !== id));
       setDeleteId(null);
     } catch {
-      alert("Failed to delete certificate. Please try again.");
+      showToast("Failed to delete certificate. Please try again.");
     }
   };
 

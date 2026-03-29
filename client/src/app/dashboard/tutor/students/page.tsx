@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Search, Pencil, Trash2, X, Users } from "lucide-react";
 import { getAll, createOne, updateOne, deleteOne } from "@/lib/storage";
+import { showToast } from "@/components/ui/Toast";
 import { Student } from "@/types";
 import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
@@ -40,7 +41,7 @@ export default function StudentsPage() {
         const data = await getAll("students");
         setStudents(data);
       } catch {
-        alert("Failed to load students. Please try again.");
+        showToast("Failed to load students. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -76,7 +77,7 @@ export default function StudentsPage() {
       }
       setModalOpen(false);
     } catch {
-      alert("Failed to save student. Please try again.");
+      showToast("Failed to save student. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -88,7 +89,7 @@ export default function StudentsPage() {
       setStudents(prev => prev.filter(s => s.id !== id));
       setDeleteId(null);
     } catch {
-      alert("Failed to delete student. Please try again.");
+      showToast("Failed to delete student. Please try again.");
     }
   };
 

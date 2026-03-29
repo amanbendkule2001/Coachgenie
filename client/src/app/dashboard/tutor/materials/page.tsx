@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, FileText, Upload, File, Video, Image, Download } from "lucide-react";
 import { getAll, deleteOne } from "@/lib/storage";
+import { showToast } from "@/components/ui/Toast";
 import { Course } from "@/types";
 import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
@@ -57,7 +58,7 @@ export default function MaterialsPage() {
         setMaterials(matsData);
         setCourses(coursesData);
       } catch {
-        alert("Failed to load materials. Please try again.");
+        showToast("Failed to load materials. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -89,7 +90,7 @@ export default function MaterialsPage() {
       setForm(BLANK);
       setFile(null);
     } catch {
-      alert("Failed to upload material. Please try again.");
+      showToast("Failed to upload material. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -101,7 +102,7 @@ export default function MaterialsPage() {
       setMaterials(prev => prev.filter(m => m.id !== id));
       setDeleteId(null);
     } catch {
-      alert("Failed to delete material. Please try again.");
+      showToast("Failed to delete material. Please try again.");
     }
   };
 

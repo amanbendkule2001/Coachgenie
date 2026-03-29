@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Calendar, Plus, Trash2, Pencil } from "lucide-react";
 import { getAll, createOne, updateOne, deleteOne } from "@/lib/storage";
+import { showToast } from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
 
@@ -62,7 +63,7 @@ export default function TimetablePage() {
         const data = await getAll("timetable");
         setSlots(data);
       } catch {
-        alert("Failed to load timetable. Please try again.");
+        showToast("Failed to load timetable. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -96,7 +97,7 @@ export default function TimetablePage() {
       }
       setModal(false);
     } catch {
-      alert("Failed to save timetable slot. Please try again.");
+      showToast("Failed to save timetable slot. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -108,7 +109,7 @@ export default function TimetablePage() {
       setSlots(prev => prev.filter(s => s.id !== id));
       setDeleteId(null);
     } catch {
-      alert("Failed to delete slot. Please try again.");
+      showToast("Failed to delete slot. Please try again.");
     }
   };
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Calendar } from "lucide-react";
 import { getAll, createOne, deleteOne } from "@/lib/storage";
+import { showToast } from "@/components/ui/Toast";
 import { Activity } from "@/types";
 import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
@@ -67,7 +68,7 @@ export default function ActivitiesPage() {
             setModal(false);
             setForm(BLANK);
         } catch {
-            alert("Failed to save activity. Please try again.");
+            showToast("Failed to save activity. Please try again.");
         } finally {
             setSaving(false);
         }
@@ -80,7 +81,7 @@ export default function ActivitiesPage() {
             setActivities((prev) => prev.filter((a) => a.id !== id));
             setDeleteId(null);
         } catch {
-            alert("Failed to delete activity. Please try again.");
+            showToast("Failed to delete activity. Please try again.");
         }
     };
 

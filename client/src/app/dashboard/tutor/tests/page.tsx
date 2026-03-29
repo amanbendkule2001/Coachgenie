@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, ClipboardList, Trash2, CheckCircle, Clock } from "lucide-react";
 import { getAll, createOne, updateOne, deleteOne } from "@/lib/storage";
+import { showToast } from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
 
@@ -50,7 +51,7 @@ export default function TestsPage() {
         const data = await getAll("tests");
         setTests(data);
       } catch {
-        alert("Failed to load tests. Please try again.");
+        showToast("Failed to load tests. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -66,7 +67,7 @@ export default function TestsPage() {
       setModal(false);
       setForm(BLANK);
     } catch {
-      alert("Failed to create test. Please try again.");
+      showToast("Failed to create test. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -79,7 +80,7 @@ export default function TestsPage() {
       setDeleteId(null);
       if (activeTest?.id === id) setActive(null);
     } catch {
-      alert("Failed to delete test. Please try again.");
+      showToast("Failed to delete test. Please try again.");
     }
   };
 
@@ -89,7 +90,7 @@ export default function TestsPage() {
       setTests(prev => prev.map(t => t.id === test.id ? { ...t, ...updated } : t));
       setActive(prev => prev?.id === test.id ? { ...prev, ...updated } : prev);
     } catch {
-      alert("Failed to update test status. Please try again.");
+      showToast("Failed to update test status. Please try again.");
     }
   };
 
@@ -108,7 +109,7 @@ export default function TestsPage() {
         return { ...prev, marks: prev.marks.map(m => m.id === mark.id ? { ...m, marks: numVal } : m) };
       });
     } catch {
-      alert("Failed to save mark. Please try again.");
+      showToast("Failed to save mark. Please try again.");
     } finally {
       setSavingMark(false);
     }
