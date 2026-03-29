@@ -184,6 +184,7 @@ export default function ActivitiesPage() {
                                                 ) : (
                                                     <button
                                                         onClick={() => setDeleteId(a.id)}
+                                                        title="Delete activity"
                                                         className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--surface-card)] shadow-sm border border-surface-border text-text-muted hover:text-danger-500 hover:bg-danger-50 transition-colors"
                                                     >
                                                         <Trash2 size={14} />
@@ -213,8 +214,9 @@ export default function ActivitiesPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Type</label>
+                            <label htmlFor="type-select" className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Type</label>
                             <select
+                                id="type-select"
                                 value={form.type}
                                 onChange={(e) => setForm((p) => ({ ...p, type: e.target.value as Activity["type"] }))}
                                 className="input-field"
@@ -228,6 +230,7 @@ export default function ActivitiesPage() {
                                 type="date"
                                 value={form.date}
                                 onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
+                                placeholder="Select a date"
                                 className="input-field"
                             />
                         </div>
