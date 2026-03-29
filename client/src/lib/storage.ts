@@ -1,45 +1,50 @@
-/**
- * storage.ts
- * ──────────
- * Centralized localStorage utilities for SmartEdu Tutor Dashboard.
- * All modules use these helpers to ensure consistent read/write patterns.
- *
- * Usage:
- *   import { loadFromStorage, saveToStorage } from "@/lib/storage";
- *   const students = loadFromStorage<Student[]>("students", []);
- *   saveToStorage("students", students);
- */
+// New storage.ts — API helper layer
+const BASE_URL = "http://localhost:8000/api";
 
-/** Read a value from localStorage, returning fallback if missing or invalid. */
-export function loadFromStorage<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw === null) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    console.warn(`[storage] Failed to parse key "${key}"`);
-    return fallback;
-  }
+function getToken() {
+  return localStorage.getItem("accessToken");
 }
 
-/** Serialize and write a value to localStorage. */
-export function saveToStorage<T>(key: string, data: T): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch {
-    console.error(`[storage] Failed to save key "${key}"`);
-  }
+function authHeaders() {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${getToken()}`,
+  };
 }
 
-/** Remove a key from localStorage. */
-export function removeFromStorage(key: string): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(key);
+export async function getAll(resource: string) {
+  const res = await fetch(`${BASE_URL}/${resource}/`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch ${resource}`);
+  const data = await res.json();
+  return data.results ?? data; // handles paginated + non-paginated
 }
 
-/** Generate a simple unique ID (timestamp + random). */
-export function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+export async function createOne(resource: string, body: object) {
+  const res = await fetch(`${BASE_URL}/${resource}/`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`Failed to create ${resource}`);
+  return res.json();
+}
+
+export async function updateOne(resource: string, id: number, body: object) {
+  const res = await fetch(`${BASE_URL}/${resource}/${id}/`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`Failed to update ${resource}`);
+  return res.json();
+}
+
+export async function deleteOne(resource: string, id: number) {
+  const res = await fetch(`${BASE_URL}/${resource}/${id}/`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`Failed to delete ${resource}`);
 }
