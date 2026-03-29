@@ -119,7 +119,7 @@ export default function StudentsPage() {
           placeholder="Search by name, course or email…"
           className="flex-1 bg-transparent text-sm text-text-primary focus:outline-none placeholder:text-text-muted"
         />
-        {search && <button onClick={() => setSearch("")}><X size={14} className="text-text-muted hover:text-text-primary" /></button>}
+        {search && <button onClick={() => setSearch("")} aria-label="Clear search"><X size={14} className="text-text-muted hover:text-text-primary" /></button>}
       </div>
 
       {/* Table */}
@@ -170,7 +170,7 @@ export default function StudentsPage() {
                   </td>
                   <td className="table-cell pr-6">
                     <div className="flex items-center gap-1">
-                      <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg hover:bg-primary-50 text-text-muted hover:text-primary-500 transition-colors">
+                      <button onClick={() => openEdit(s)} title="Edit student" className="p-1.5 rounded-lg hover:bg-primary-50 text-text-muted hover:text-primary-500 transition-colors">
                         <Pencil size={14} />
                       </button>
                       {deleteId === s.id ? (
@@ -179,7 +179,7 @@ export default function StudentsPage() {
                           <button onClick={() => setDeleteId(null)} className="text-xs px-2 py-1 bg-surface-muted text-text-muted rounded-lg">No</button>
                         </div>
                       ) : (
-                        <button onClick={() => setDeleteId(s.id)} className="p-1.5 rounded-lg hover:bg-danger-50 text-text-muted hover:text-danger-500 transition-colors">
+                        <button onClick={() => setDeleteId(s.id)} title="Delete student" className="p-1.5 rounded-lg hover:bg-danger-50 text-text-muted hover:text-danger-500 transition-colors">
                           <Trash2 size={14} />
                         </button>
                       )}
@@ -217,13 +217,13 @@ export default function StudentsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Fee Status</label>
-              <select value={form.feeStatus} onChange={e => f("feeStatus", e.target.value)} className="input-field">
+              <select value={form.feeStatus} onChange={e => f("feeStatus", e.target.value)} aria-label="Fee Status" className="input-field">
                 {(["Paid","Pending","Overdue","Partial"] as const).map(v => <option key={v}>{v}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Status</label>
-              <select value={form.status} onChange={e => f("status", e.target.value)} className="input-field">
+              <select value={form.status} onChange={e => f("status", e.target.value)} aria-label="Student Status" className="input-field">
                 {(["Active","At Risk","Inactive"] as const).map(v => <option key={v}>{v}</option>)}
               </select>
             </div>
@@ -232,11 +232,11 @@ export default function StudentsPage() {
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Score (%)</label>
               <input type="number" min={0} max={100} value={form.score}
-                onChange={e => f("score", Number(e.target.value))} className="input-field" />
+                onChange={e => f("score", Number(e.target.value))} placeholder="0-100" className="input-field" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Join Date</label>
-              <input type="date" value={form.joinDate} onChange={e => f("joinDate", e.target.value)} className="input-field" />
+              <input type="date" value={form.joinDate} onChange={e => f("joinDate", e.target.value)} title="Join Date" className="input-field" />
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-2">
