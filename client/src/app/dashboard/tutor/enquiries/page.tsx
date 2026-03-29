@@ -2,18 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Plus, MessageSquare, Trash2, Pencil, Phone, Mail, ChevronDown } from "lucide-react";
-import { loadFromStorage, saveToStorage, generateId } from "@/lib/storage";
+import { getAll, createOne, updateOne, deleteOne } from "@/lib/storage";
 import { Enquiry } from "@/types";
 import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
-
-const SEED: Enquiry[] = [
-  { id:"e1", name:"Arjun Singh",    phone:"9876123450", email:"arjun@email.com",   interestedCourse:"JEE Mains",   stage:"New",       source:"Instagram", notes:"Called once, interested.",      date:"2026-03-01" },
-  { id:"e2", name:"Meera Joshi",    phone:"9765012349", email:"meera@email.com",   interestedCourse:"NEET Prep",   stage:"Interested",source:"Referral",  notes:"Demo class scheduled for Mon.",  date:"2026-02-25" },
-  { id:"e3", name:"Rohit Gupta",    phone:"9654901238", email:"rohit@email.com",   interestedCourse:"JEE Advanced",stage:"Converted", source:"Website",   notes:"Enrolled in Batch A.",          date:"2026-02-20" },
-  { id:"e4", name:"Ananya Das",     phone:"9543890127", email:"ananya@email.com",  interestedCourse:"NEET Prep",   stage:"Contacted", source:"Walk-in",   notes:"Needs scholarship info.",        date:"2026-03-05" },
-  { id:"e5", name:"Vikram Nair",    phone:"9432789016", email:"vikram@email.com",  interestedCourse:"Foundation X",stage:"Rejected",  source:"Instagram", notes:"Budget too tight this year.",   date:"2026-02-15" },
-];
 
 const STAGES: Enquiry["stage"][] = ["New","Contacted","Interested","Converted","Rejected"];
 
@@ -34,6 +26,8 @@ const stageCounts = (list: Enquiry[]) =>
 
 export default function EnquiriesPage() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [saving, setSaving]       = useState(false);
   const [modalOpen, setModal]     = useState(false);
   const [editing, setEditing]     = useState<Enquiry|null>(null);
   const [form, setForm]           = useState<Omit<Enquiry,"id">>(BLANK);
@@ -41,28 +35,69 @@ export default function EnquiriesPage() {
   const [filterStage, setFilter]  = useState<Enquiry["stage"]|"all">("all");
 
   useEffect(() => {
-    const stored = loadFromStorage<Enquiry[]>("enquiries", []);
-    setEnquiries(stored.length ? stored : SEED);
-    if (!stored.length) saveToStorage("enquiries", SEED);
+    (async () => {
+      try {
+        const data = await getAll("enquiries");
+        setEnquiries(data);
+      } catch {
+        alert("Failed to load enquiries. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
-
-  const persist = (data: Enquiry[]) => { setEnquiries(data); saveToStorage("enquiries", data); };
 
   const openAdd  = () => { setEditing(null); setForm(BLANK); setModal(true); };
   const openEdit = (e: Enquiry) => { setEditing(e); const {id:_,...rest}=e; setForm(rest); setModal(true); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim()) return;
-    if (editing) {
-      persist(enquiries.map(e => e.id===editing.id ? {...form, id:editing.id} : e));
-    } else {
-      persist([{ ...form, id:generateId() }, ...enquiries]);
+    setSaving(true);
+    try {
+      // Map frontend field names to Django field names
+      const payload = {
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        subject: form.interestedCourse,
+        stage: form.stage,
+        source: form.source,
+        notes: form.notes,
+        follow_up: form.date,
+      };
+      if (editing) {
+        const updated = await updateOne("enquiries", Number(editing.id), payload);
+        setEnquiries(prev => prev.map(e => e.id === editing.id ? { ...e, ...updated } : e));
+      } else {
+        const created = await createOne("enquiries", payload);
+        setEnquiries(prev => [created, ...prev]);
+      }
+      setModal(false);
+    } catch {
+      alert("Failed to save enquiry. Please try again.");
+    } finally {
+      setSaving(false);
     }
-    setModal(false);
   };
 
-  const updateStage = (id: string, stage: Enquiry["stage"]) =>
-    persist(enquiries.map(e => e.id===id ? {...e, stage} : e));
+  const updateStage = async (id: string, stage: Enquiry["stage"]) => {
+    try {
+      const updated = await updateOne("enquiries", Number(id), { stage });
+      setEnquiries(prev => prev.map(e => e.id === id ? { ...e, ...updated } : e));
+    } catch {
+      alert("Failed to update stage. Please try again.");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteOne("enquiries", Number(id));
+      setEnquiries(prev => prev.filter(e => e.id !== id));
+      setDeleteId(null);
+    } catch {
+      alert("Failed to delete enquiry. Please try again.");
+    }
+  };
 
   const filtered = filterStage==="all" ? enquiries : enquiries.filter(e=>e.stage===filterStage);
 
@@ -90,7 +125,8 @@ export default function EnquiriesPage() {
 
       {/* Enquiry cards */}
       <div className="space-y-3">
-        {filtered.length===0 && <p className="text-center py-10 text-sm text-text-muted">No enquiries in this stage.</p>}
+        {loading && <p className="text-center py-10 text-sm text-text-muted animate-pulse">Loading enquiries…</p>}
+        {!loading && filtered.length===0 && <p className="text-center py-10 text-sm text-text-muted">No enquiries in this stage.</p>}
         {filtered.map(e => (
           <div key={e.id} className="page-card">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -120,7 +156,7 @@ export default function EnquiriesPage() {
                 <button onClick={()=>openEdit(e)} className="p-2 rounded-xl hover:bg-surface-muted text-text-muted hover:text-text-primary transition-colors"><Pencil size={14}/></button>
                 {deleteId===e.id ? (
                   <>
-                    <button onClick={()=>{persist(enquiries.filter(x=>x.id!==e.id));setDeleteId(null);}} className="text-xs px-2 py-1 bg-danger-500 text-white rounded-lg">Yes</button>
+                    <button onClick={()=>handleDelete(e.id)} className="text-xs px-2 py-1 bg-danger-500 text-white rounded-lg">Yes</button>
                     <button onClick={()=>setDeleteId(null)} className="text-xs px-2 py-1 bg-surface-muted text-text-muted rounded-lg">No</button>
                   </>
                 ) : (
@@ -174,7 +210,7 @@ export default function EnquiriesPage() {
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <button onClick={()=>setModal(false)} className="px-4 py-2 text-sm border border-surface-border rounded-xl hover:bg-surface-muted">Cancel</button>
-            <button onClick={handleSave} disabled={!form.name.trim()} className="btn-primary disabled:opacity-50">{editing?"Save":"Add Enquiry"}</button>
+            <button onClick={handleSave} disabled={!form.name.trim() || saving} className="btn-primary disabled:opacity-50">{saving ? "Saving…" : editing?"Save":"Add Enquiry"}</button>
           </div>
         </div>
       </Modal>

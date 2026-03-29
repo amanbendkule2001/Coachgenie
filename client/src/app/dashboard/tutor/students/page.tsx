@@ -2,19 +2,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Search, Pencil, Trash2, X, Users } from "lucide-react";
-import { loadFromStorage, saveToStorage, generateId } from "@/lib/storage";
+import { getAll, createOne, updateOne, deleteOne } from "@/lib/storage";
 import { Student } from "@/types";
 import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
-
-// ── Seed data shown on first load ─────────────────────────────────────────────
-const SEED: Student[] = [
-  { id: "s1", name: "Aarav Mehta",    email: "aarav@email.com",   phone: "9876543210", course: "JEE Mains",  batch: "Batch A", feeStatus: "Paid",    status: "Active",  score: 87, joinDate: "2026-01-10" },
-  { id: "s2", name: "Priya Sharma",   email: "priya@email.com",   phone: "9765432109", course: "NEET Prep",  batch: "Batch B", feeStatus: "Overdue",  status: "At Risk", score: 54, joinDate: "2026-01-15" },
-  { id: "s3", name: "Ravi Kumar",     email: "ravi@email.com",    phone: "9654321098", course: "JEE Advance",batch: "Batch A", feeStatus: "Paid",    status: "Active",  score: 92, joinDate: "2026-02-01" },
-  { id: "s4", name: "Sneha Patel",    email: "sneha@email.com",   phone: "9543210987", course: "NEET Prep",  batch: "Batch C", feeStatus: "Pending",  status: "Active",  score: 78, joinDate: "2026-02-10" },
-  { id: "s5", name: "Dev Kapoor",     email: "dev@email.com",     phone: "9432109876", course: "JEE Mains",  batch: "Batch B", feeStatus: "Partial",  status: "Active",  score: 65, joinDate: "2026-03-01" },
-];
 
 const BLANK: Omit<Student, "id"> = {
   name: "", email: "", phone: "", course: "", batch: "",
@@ -35,22 +26,27 @@ const STATUS_COLORS: Record<Student["status"], string> = {
 
 export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
   const [search, setSearch]     = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing]   = useState<Student | null>(null);
   const [form, setForm]         = useState<Omit<Student, "id">>(BLANK);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  // Load from localStorage (seed if empty)
   useEffect(() => {
-    const stored = loadFromStorage<Student[]>("students", []);
-    setStudents(stored.length ? stored : SEED);
-    if (!stored.length) saveToStorage("students", SEED);
+    (async () => {
+      try {
+        const data = await getAll("students");
+        setStudents(data);
+      } catch {
+        alert("Failed to load students. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const persist = (data: Student[]) => { setStudents(data); saveToStorage("students", data); };
-
-  // Filtered list
   const filtered = useMemo(() =>
     students.filter(s =>
       s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -58,10 +54,8 @@ export default function StudentsPage() {
       s.email.toLowerCase().includes(search.toLowerCase())
     ), [students, search]);
 
-  // Open add modal
   const openAdd = () => { setEditing(null); setForm(BLANK); setModalOpen(true); };
 
-  // Open edit modal
   const openEdit = (s: Student) => {
     setEditing(s);
     const { id: _id, ...rest } = s;
@@ -69,21 +63,33 @@ export default function StudentsPage() {
     setModalOpen(true);
   };
 
-  // Save (add or edit)
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim() || !form.course.trim()) return;
-    if (editing) {
-      persist(students.map(s => s.id === editing.id ? { ...form, id: editing.id } : s));
-    } else {
-      persist([...students, { ...form, id: generateId() }]);
+    setSaving(true);
+    try {
+      if (editing) {
+        const updated = await updateOne("students", Number(editing.id), form);
+        setStudents(prev => prev.map(s => s.id === editing.id ? updated : s));
+      } else {
+        const created = await createOne("students", form);
+        setStudents(prev => [...prev, created]);
+      }
+      setModalOpen(false);
+    } catch {
+      alert("Failed to save student. Please try again.");
+    } finally {
+      setSaving(false);
     }
-    setModalOpen(false);
   };
 
-  // Delete
-  const handleDelete = (id: string) => {
-    persist(students.filter(s => s.id !== id));
-    setDeleteId(null);
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteOne("students", Number(id));
+      setStudents(prev => prev.filter(s => s.id !== id));
+      setDeleteId(null);
+    } catch {
+      alert("Failed to delete student. Please try again.");
+    }
   };
 
   const f = (field: keyof typeof form, value: string | number) =>
@@ -127,7 +133,9 @@ export default function StudentsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading ? (
+                <tr><td colSpan={7} className="text-center py-12 text-sm text-text-muted animate-pulse">Loading students…</td></tr>
+              ) : filtered.length === 0 ? (
                 <tr><td colSpan={7} className="text-center py-12 text-sm text-text-muted">No students found.</td></tr>
               ) : filtered.map((s) => (
                 <tr key={s.id} className="hover:bg-surface-muted transition-colors">
@@ -232,8 +240,8 @@ export default function StudentsPage() {
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <button onClick={() => setModalOpen(false)} className="px-4 py-2 text-sm text-text-secondary border border-surface-border rounded-xl hover:bg-surface-muted transition-colors">Cancel</button>
-            <button onClick={handleSave} disabled={!form.name.trim() || !form.course.trim()} className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
-              {editing ? "Save Changes" : "Add Student"}
+            <button onClick={handleSave} disabled={!form.name.trim() || !form.course.trim() || saving} className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+              {saving ? "Saving…" : editing ? "Save Changes" : "Add Student"}
             </button>
           </div>
         </div>

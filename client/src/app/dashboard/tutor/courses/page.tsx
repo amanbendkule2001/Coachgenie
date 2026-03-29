@@ -2,18 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Trash2, BookOpen, Users, ChevronDown, ChevronUp, BarChart2 } from "lucide-react";
-import { loadFromStorage, saveToStorage, generateId } from "@/lib/storage";
-import { Course } from "@/types";
+import { getAll, createOne, updateOne, deleteOne } from "@/lib/storage";
+import { Course, Student } from "@/types";
 import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
-
-const SEED: Course[] = [
-  { id: "c1", title: "JEE Mains 2026",    subject: "Physics & Math",   description: "Complete JEE Mains preparation covering all chapters.", batch: "Batch A", duration: "6 months", totalStudents: 32, materialsCount: 14, progress: 65, status: "Active",    startDate: "2026-01-01" },
-  { id: "c2", title: "NEET Prep 2026",     subject: "Biology & Chem",   description: "Full syllabus NEET preparation course.",                batch: "Batch B", duration: "8 months", totalStudents: 28, materialsCount: 20, progress: 45, status: "Active",    startDate: "2026-01-15" },
-  { id: "c3", title: "JEE Advanced 2026",  subject: "Advanced Physics", description: "Advanced JEE preparation with mock tests.",             batch: "Batch A", duration: "4 months", totalStudents: 18, materialsCount: 8,  progress: 25, status: "Active",    startDate: "2026-02-01" },
-  { id: "c4", title: "Board Booster XI",   subject: "All Subjects",     description: "Class 11 board exam preparation course.",               batch: "Batch C", duration: "5 months", totalStudents: 40, materialsCount: 30, progress: 80, status: "Active",    startDate: "2025-09-01" },
-  { id: "c5", title: "Foundation IX–X",    subject: "Math & Science",   description: "Foundation course for Class 9-10 students.",            batch: "Batch D", duration: "10 months",totalStudents: 22, materialsCount: 0,  progress: 0,  status: "Upcoming",  startDate: "2026-04-01" },
-];
 
 const BLANK: Omit<Course, "id"> = {
   title: "", subject: "", description: "", batch: "", duration: "",
@@ -30,27 +22,64 @@ const STATUS_COLORS: Record<Course["status"], string> = {
 
 export default function CoursesPage() {
   const [courses, setCourses]     = useState<Course[]>([]);
+  const [students, setStudents]   = useState<Student[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [saving, setSaving]       = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm]           = useState<Omit<Course,"id">>(BLANK);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
   const [expanded, setExpanded]   = useState<string | null>(null);
   const [deleteId, setDeleteId]   = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = loadFromStorage<Course[]>("courses", []);
-    setCourses(stored.length ? stored : SEED);
-    if (!stored.length) saveToStorage("courses", SEED);
+    (async () => {
+      try {
+        const [coursesData, studentsData] = await Promise.all([
+          getAll("courses"),
+          getAll("students"),
+        ]);
+        setCourses(coursesData);
+        setStudents(studentsData);
+      } catch {
+        alert("Failed to load courses. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const persist = (data: Course[]) => { setCourses(data); saveToStorage("courses", data); };
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.title.trim() || !form.subject.trim()) return;
-    persist([...courses, { ...form, id: generateId() }]);
-    setModalOpen(false);
-    setForm(BLANK);
+    setSaving(true);
+    try {
+      const payload = { ...form, students: selectedStudentIds };
+      const created = await createOne("courses", payload);
+      setCourses(prev => [...prev, created]);
+      setModalOpen(false);
+      setForm(BLANK);
+      setSelectedStudentIds([]);
+    } catch {
+      alert("Failed to create course. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (id: string) => { persist(courses.filter(c => c.id !== id)); setDeleteId(null); };
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteOne("courses", Number(id));
+      setCourses(prev => prev.filter(c => c.id !== id));
+      setDeleteId(null);
+    } catch {
+      alert("Failed to delete course. Please try again.");
+    }
+  };
+
+  const toggleStudentId = (id: number) => {
+    setSelectedStudentIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
 
   const f = (field: keyof typeof form, value: string | number) =>
     setForm(prev => ({ ...prev, [field]: value }));
@@ -65,92 +94,96 @@ export default function CoursesPage() {
           </h1>
           <p className="text-sm text-text-muted mt-0.5">{courses.length} batches managed</p>
         </div>
-        <button onClick={() => { setForm(BLANK); setModalOpen(true); }} className="btn-primary">
+        <button onClick={() => { setForm(BLANK); setSelectedStudentIds([]); setModalOpen(true); }} className="btn-primary">
           <Plus size={16} /> New Course
         </button>
       </div>
 
       {/* Course Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {courses.map((c, i) => (
-          <div key={c.id} className="page-card !p-0 overflow-hidden hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
-            {/* Gradient Header */}
-            <div className={clsx("bg-gradient-to-r h-2", GRAD[i % GRAD.length])} />
-            <div className="p-5 space-y-4">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="text-sm font-bold text-text-primary leading-snug">{c.title}</h3>
-                  <p className="text-xs text-text-muted mt-0.5">{c.subject}</p>
-                </div>
-                <span className={clsx("badge text-xs flex-shrink-0", STATUS_COLORS[c.status])}>{c.status}</span>
-              </div>
-
-              {/* Stats row */}
-              <div className="flex items-center gap-4 text-xs text-text-muted">
-                <span className="flex items-center gap-1"><Users size={12} />{c.totalStudents} Students</span>
-                <span className="flex items-center gap-1"><BookOpen size={12} />{c.materialsCount} Files</span>
-                <span>{c.duration}</span>
-              </div>
-
-              {/* Progress */}
-              <div>
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="text-text-muted">Progress</span>
-                  <span className="font-semibold text-text-primary">{c.progress}%</span>
-                </div>
-                <div className="w-full bg-surface-muted rounded-full h-2">
-                  <div className={clsx("h-2 rounded-full bg-gradient-to-r transition-all duration-500", GRAD[i % GRAD.length])}
-                    style={{ width: `${c.progress}%` }} />
-                </div>
-              </div>
-
-              {/* Expand details */}
-              <button onClick={() => setExpanded(expanded === c.id ? null : c.id)}
-                className="w-full flex items-center justify-between text-xs text-primary-500 hover:text-primary-700 font-medium transition-colors pt-1 border-t border-surface-border">
-                <span>{expanded === c.id ? "Hide details" : "View details"}</span>
-                {expanded === c.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-
-              {expanded === c.id && (
-                <div className="animate-fade-in space-y-2 pt-1">
-                  <p className="text-xs text-text-secondary">{c.description}</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-surface-muted rounded-lg p-2">
-                      <p className="text-text-muted">Batch</p>
-                      <p className="font-semibold text-text-primary">{c.batch}</p>
-                    </div>
-                    <div className="bg-surface-muted rounded-lg p-2">
-                      <p className="text-text-muted">Start Date</p>
-                      <p className="font-semibold text-text-primary">{c.startDate}</p>
-                    </div>
+      {loading ? (
+        <div className="text-center py-16 text-sm text-text-muted animate-pulse">Loading courses…</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {courses.map((c, i) => (
+            <div key={c.id} className="page-card !p-0 overflow-hidden hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
+              {/* Gradient Header */}
+              <div className={clsx("bg-gradient-to-r h-2", GRAD[i % GRAD.length])} />
+              <div className="p-5 space-y-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-bold text-text-primary leading-snug">{c.title}</h3>
+                    <p className="text-xs text-text-muted mt-0.5">{c.subject}</p>
                   </div>
-                  {/* Delete */}
-                  {deleteId === c.id ? (
-                    <div className="flex gap-2 pt-1">
-                      <button onClick={() => handleDelete(c.id)} className="flex-1 py-1.5 text-xs bg-danger-500 text-white rounded-lg">Confirm Delete</button>
-                      <button onClick={() => setDeleteId(null)} className="flex-1 py-1.5 text-xs bg-surface-muted text-text-muted rounded-lg">Cancel</button>
-                    </div>
-                  ) : (
-                    <button onClick={() => setDeleteId(c.id)}
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-danger-500 hover:bg-danger-50 border border-danger-200 rounded-lg transition-colors">
-                      <Trash2 size={12} /> Delete Course
-                    </button>
-                  )}
+                  <span className={clsx("badge text-xs flex-shrink-0", STATUS_COLORS[c.status])}>{c.status}</span>
                 </div>
-              )}
-            </div>
-          </div>
-        ))}
 
-        {/* Add placeholder card */}
-        <button onClick={() => { setForm(BLANK); setModalOpen(true); }}
-          className="page-card !p-0 border-2 border-dashed border-surface-border hover:border-primary-300 hover:bg-primary-50/30 transition-all duration-200 min-h-[180px] flex flex-col items-center justify-center gap-3 group">
-          <div className="w-12 h-12 bg-surface-muted rounded-2xl flex items-center justify-center group-hover:bg-primary-50 transition-colors">
-            <Plus size={22} className="text-text-muted group-hover:text-primary-500 transition-colors" />
-          </div>
-          <p className="text-sm font-semibold text-text-muted group-hover:text-primary-500 transition-colors">Create New Course</p>
-        </button>
-      </div>
+                {/* Stats row */}
+                <div className="flex items-center gap-4 text-xs text-text-muted">
+                  <span className="flex items-center gap-1"><Users size={12} />{c.totalStudents} Students</span>
+                  <span className="flex items-center gap-1"><BookOpen size={12} />{c.materialsCount} Files</span>
+                  <span>{c.duration}</span>
+                </div>
+
+                {/* Progress */}
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="text-text-muted">Progress</span>
+                    <span className="font-semibold text-text-primary">{c.progress}%</span>
+                  </div>
+                  <div className="w-full bg-surface-muted rounded-full h-2">
+                    <div className={clsx("h-2 rounded-full bg-gradient-to-r transition-all duration-500", GRAD[i % GRAD.length])}
+                      style={{ width: `${c.progress}%` }} />
+                  </div>
+                </div>
+
+                {/* Expand details */}
+                <button onClick={() => setExpanded(expanded === c.id ? null : c.id)}
+                  className="w-full flex items-center justify-between text-xs text-primary-500 hover:text-primary-700 font-medium transition-colors pt-1 border-t border-surface-border">
+                  <span>{expanded === c.id ? "Hide details" : "View details"}</span>
+                  {expanded === c.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+
+                {expanded === c.id && (
+                  <div className="animate-fade-in space-y-2 pt-1">
+                    <p className="text-xs text-text-secondary">{c.description}</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-surface-muted rounded-lg p-2">
+                        <p className="text-text-muted">Batch</p>
+                        <p className="font-semibold text-text-primary">{c.batch}</p>
+                      </div>
+                      <div className="bg-surface-muted rounded-lg p-2">
+                        <p className="text-text-muted">Start Date</p>
+                        <p className="font-semibold text-text-primary">{c.startDate}</p>
+                      </div>
+                    </div>
+                    {/* Delete */}
+                    {deleteId === c.id ? (
+                      <div className="flex gap-2 pt-1">
+                        <button onClick={() => handleDelete(c.id)} className="flex-1 py-1.5 text-xs bg-danger-500 text-white rounded-lg">Confirm Delete</button>
+                        <button onClick={() => setDeleteId(null)} className="flex-1 py-1.5 text-xs bg-surface-muted text-text-muted rounded-lg">Cancel</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setDeleteId(c.id)}
+                        className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-danger-500 hover:bg-danger-50 border border-danger-200 rounded-lg transition-colors">
+                        <Trash2 size={12} /> Delete Course
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* Add placeholder card */}
+          <button onClick={() => { setForm(BLANK); setSelectedStudentIds([]); setModalOpen(true); }}
+            className="page-card !p-0 border-2 border-dashed border-surface-border hover:border-primary-300 hover:bg-primary-50/30 transition-all duration-200 min-h-[180px] flex flex-col items-center justify-center gap-3 group">
+            <div className="w-12 h-12 bg-surface-muted rounded-2xl flex items-center justify-center group-hover:bg-primary-50 transition-colors">
+              <Plus size={22} className="text-text-muted group-hover:text-primary-500 transition-colors" />
+            </div>
+            <p className="text-sm font-semibold text-text-muted group-hover:text-primary-500 transition-colors">Create New Course</p>
+          </button>
+        </div>
+      )}
 
       {/* Add Course Modal */}
       <Modal isOpen={modalOpen} title="Create New Course" onClose={() => setModalOpen(false)} size="lg">
@@ -191,11 +224,27 @@ export default function CoursesPage() {
               <textarea rows={3} value={form.description} onChange={e => f("description", e.target.value)}
                 placeholder="Brief course description…" className="input-field resize-none" />
             </div>
+            {students.length > 0 && (
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Enroll Students</label>
+                <div className="max-h-32 overflow-y-auto border border-surface-border rounded-xl p-2 space-y-1">
+                  {students.map(s => (
+                    <label key={s.id} className="flex items-center gap-2 cursor-pointer hover:bg-surface-muted rounded-lg px-2 py-1">
+                      <input type="checkbox" checked={selectedStudentIds.includes(Number(s.id))}
+                        onChange={() => toggleStudentId(Number(s.id))}
+                        className="rounded" />
+                      <span className="text-sm text-text-primary">{s.name}</span>
+                      <span className="text-xs text-text-muted ml-auto">{s.course}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <button onClick={() => setModalOpen(false)} className="px-4 py-2 text-sm text-text-secondary border border-surface-border rounded-xl hover:bg-surface-muted">Cancel</button>
-            <button onClick={handleSave} disabled={!form.title.trim()} className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
-              <BarChart2 size={15} /> Create Course
+            <button onClick={handleSave} disabled={!form.title.trim() || saving} className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+              <BarChart2 size={15} /> {saving ? "Saving…" : "Create Course"}
             </button>
           </div>
         </div>

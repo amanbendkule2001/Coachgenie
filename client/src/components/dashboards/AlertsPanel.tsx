@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { AlertCircle, Clock, CheckCircle } from "lucide-react";
-import { loadFromStorage } from "@/lib/storage";
-import { Payment, Test } from "@/types";
+import { getAll } from "@/lib/storage";
+
 import clsx from "clsx";
 import Link from "next/link";
 
@@ -20,37 +20,43 @@ export default function AlertsPanel() {
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
 
   useEffect(() => {
-    const payments = loadFromStorage<Payment[]>("payments", []);
-    const tests = loadFromStorage<Test[]>("tests", []);
-    const list: AlertItem[] = [];
+    (async () => {
+      try {
+        const [payments, tests] = await Promise.all([
+          getAll("fees"),
+          getAll("tests"),
+        ]);
+        const list: AlertItem[] = [];
 
-    // 1. Overdue payments (Danger)
-    const overdue = payments.filter((p) => p.status === "Overdue");
-    overdue.forEach((p) => {
-      list.push({
-        id: `p-${p.id}`,
-        title: "Overdue Fee",
-        desc: `${p.studentName} has an overdue fee of ₹${(p.totalAmount - p.paidAmount).toLocaleString("en-IN")}`,
-        type: "danger",
-        link: "/dashboard/tutor/fees",
-        time: p.dueDate,
-      });
-    });
+        // 1. Overdue payments (Danger)
+        payments.filter((p: any) => p.status === "Overdue").forEach((p: any) => {
+          list.push({
+            id: `p-${p.id}`,
+            title: "Overdue Fee",
+            desc: `${p.student_name ?? `Student #${p.student}`} has an overdue fee of ₹${(p.amount ?? 0).toLocaleString("en-IN")}`,
+            type: "danger",
+            link: "/dashboard/tutor/fees",
+            time: p.due_date ?? "",
+          });
+        });
 
-    // 2. Upcoming Tests (Warning)
-    const upcomingTests = tests.filter((t) => t.status === "Upcoming");
-    upcomingTests.forEach((t) => {
-      list.push({
-        id: `t-${t.id}`,
-        title: "Upcoming Test",
-        desc: `${t.testName} for ${t.batch} is scheduled on ${t.date}`,
-        type: "warning",
-        link: "/dashboard/tutor/tests",
-        time: t.date,
-      });
-    });
+        // 2. Upcoming Tests (Warning)
+        tests.filter((t: any) => t.status === "Upcoming").forEach((t: any) => {
+          list.push({
+            id: `t-${t.id}`,
+            title: "Upcoming Test",
+            desc: `${t.title} is scheduled on ${t.date}`,
+            type: "warning",
+            link: "/dashboard/tutor/tests",
+            time: t.date ?? "",
+          });
+        });
 
-    setAlerts(list);
+        setAlerts(list);
+      } catch {
+        // Silently fail for alerts panel — not critical
+      }
+    })();
   }, []);
 
   if (alerts.length === 0) {

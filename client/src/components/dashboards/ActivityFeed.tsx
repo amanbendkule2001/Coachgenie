@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserPlus, BookOpen, CreditCard, Clock, FileText, Upload } from "lucide-react";
-import { loadFromStorage } from "@/lib/storage";
-import { Student, Course, Payment, Material } from "@/types";
+import { UserPlus, BookOpen, CreditCard, Clock, Upload } from "lucide-react";
+import { getAll } from "@/lib/storage";
 import clsx from "clsx";
 
 interface FeedItem {
@@ -13,67 +12,89 @@ interface FeedItem {
   time: string;
   icon: React.ReactNode;
   bgClass: string;
-  dateVal: number; // for sorting
+  dateVal: number;
 }
 
 export default function ActivityFeed() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const students  = loadFromStorage<Student[]>("students", []);
-    const courses   = loadFromStorage<Course[]>("courses", []);
-    const payments  = loadFromStorage<Payment[]>("payments", []);
-    const materials = loadFromStorage<Material[]>("materials", []);
+    (async () => {
+      try {
+        const [students, materials, fees, tests] = await Promise.all([
+          getAll("students"),
+          getAll("materials"),
+          getAll("fees"),
+          getAll("tests"),
+        ]);
 
-    const list: FeedItem[] = [];
+        const list: FeedItem[] = [];
 
-    // Recent Students
-    students.forEach(s => list.push({
-      id: `s-${s.id}`,
-      title: "New Student Enrolled",
-      desc: `${s.name} joined ${s.course}`,
-      time: s.joinDate,
-      dateVal: new Date(s.joinDate).getTime(),
-      icon: <UserPlus size={16} />,
-      bgClass: "bg-success-500/20 text-success-400",
-    }));
+        // Recent Students
+        students.forEach((s: any) => {
+          const date = s.enrolled_at ?? s.joinDate ?? s.created_at ?? "";
+          list.push({
+            id: `s-${s.id}`,
+            title: "New Student Enrolled",
+            desc: `${s.name} joined ${s.course ?? s.subject ?? ""}`,
+            time: date,
+            dateVal: date ? new Date(date).getTime() : 0,
+            icon: <UserPlus size={16} />,
+            bgClass: "bg-success-500/20 text-success-400",
+          });
+        });
 
-    // Recent Courses
-    courses.forEach(c => list.push({
-      id: `c-${c.id}`,
-      title: "Course Created",
-      desc: `${c.title} (${c.batch}) started`,
-      time: c.startDate,
-      dateVal: new Date(c.startDate).getTime(),
-      icon: <BookOpen size={16} />,
-      bgClass: "bg-primary-500/20 text-primary-400",
-    }));
+        // Recent Materials
+        materials.forEach((m: any) => {
+          const date = m.created_at ?? m.uploadDate ?? "";
+          list.push({
+            id: `m-${m.id}`,
+            title: "Material Uploaded",
+            desc: `${m.title} added`,
+            time: date?.split("T")[0] ?? date,
+            dateVal: date ? new Date(date).getTime() : 0,
+            icon: <Upload size={16} />,
+            bgClass: "bg-purple-500/20 text-purple-400",
+          });
+        });
 
-    // Recent Completed Payments
-    payments.filter(p => p.status === "Paid").forEach(p => list.push({
-      id: `p-${p.id}`,
-      title: "Fee Paid",
-      desc: `${p.studentName} paid ₹${p.paidAmount.toLocaleString("en-IN")}`,
-      time: p.lastPaidDate !== "—" ? p.lastPaidDate : p.dueDate,
-      dateVal: new Date(p.lastPaidDate !== "—" ? p.lastPaidDate : p.dueDate).getTime(),
-      icon: <CreditCard size={16} />,
-      bgClass: "bg-warning-500/20 text-warning-500",
-    }));
+        // Recent Payments
+        fees.filter((p: any) => p.status === "Paid").forEach((p: any) => {
+          const date = p.paid_date ?? p.due_date ?? "";
+          list.push({
+            id: `p-${p.id}`,
+            title: "Fee Paid",
+            desc: `${p.student_name ?? `Student #${p.student}`} paid ₹${(p.amount ?? 0).toLocaleString("en-IN")}`,
+            time: date,
+            dateVal: date ? new Date(date).getTime() : 0,
+            icon: <CreditCard size={16} />,
+            bgClass: "bg-warning-500/20 text-warning-500",
+          });
+        });
 
-    // Recent Materials
-    materials.forEach(m => list.push({
-      id: `m-${m.id}`,
-      title: "Material Uploaded",
-      desc: `${m.title} added to ${m.courseName}`,
-      time: m.uploadDate,
-      dateVal: new Date(m.uploadDate).getTime(),
-      icon: <Upload size={16} />,
-      bgClass: "bg-purple-500/20 text-purple-400",
-    }));
+        // Recent Tests
+        tests.forEach((t: any) => {
+          const date = t.date ?? t.created_at ?? "";
+          list.push({
+            id: `t-${t.id}`,
+            title: "Test Scheduled",
+            desc: `${t.title} — ${t.subject ?? ""}`,
+            time: date,
+            dateVal: date ? new Date(date).getTime() : 0,
+            icon: <BookOpen size={16} />,
+            bgClass: "bg-primary-500/20 text-primary-400",
+          });
+        });
 
-    // Sort descending by date, take top 6
-    const sorted = list.sort((a,b) => b.dateVal - a.dateVal).slice(0, 6);
-    setFeed(sorted);
+        const sorted = list.sort((a, b) => b.dateVal - a.dateVal).slice(0, 6);
+        setFeed(sorted);
+      } catch {
+        // Silently fail for feed — not critical
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   return (
@@ -82,7 +103,11 @@ export default function ActivityFeed() {
         <h2 className="text-base font-bold text-text-primary">Recent Activity</h2>
       </div>
 
-      {feed.length === 0 ? (
+      {loading ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
+          <p className="text-sm text-text-muted animate-pulse">Loading activity…</p>
+        </div>
+      ) : feed.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center">
           <Clock size={32} className="text-surface-border mb-2" />
           <p className="text-sm font-semibold text-text-primary">No recent activity</p>

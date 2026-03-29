@@ -2,62 +2,134 @@
 
 import { useState, useEffect } from "react";
 import { Plus, CreditCard, Trash2, CheckCircle, AlertCircle, Clock, Pencil } from "lucide-react";
-import { loadFromStorage, saveToStorage, generateId } from "@/lib/storage";
-import { Payment } from "@/types";
+import { getAll, createOne, updateOne, deleteOne } from "@/lib/storage";
 import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
 
-const SEED: Payment[] = [
-  { id:"p1", studentId:"s1", studentName:"Aarav Mehta",   course:"JEE Mains 2026",   batch:"Batch A", totalAmount:36000, paidAmount:36000, status:"Paid",    dueDate:"2026-01-10", lastPaidDate:"2026-01-08" },
-  { id:"p2", studentId:"s2", studentName:"Priya Sharma",  course:"NEET Prep 2026",   batch:"Batch B", totalAmount:42000, paidAmount:0,     status:"Overdue",  dueDate:"2026-02-01", lastPaidDate:"—" },
-  { id:"p3", studentId:"s3", studentName:"Ravi Kumar",    course:"JEE Advanced 2026",batch:"Batch A", totalAmount:50000, paidAmount:50000, status:"Paid",    dueDate:"2026-02-01", lastPaidDate:"2026-01-28" },
-  { id:"p4", studentId:"s4", studentName:"Sneha Patel",   course:"NEET Prep 2026",   batch:"Batch C", totalAmount:42000, paidAmount:21000, status:"Partial",  dueDate:"2026-03-01", lastPaidDate:"2026-02-10" },
-  { id:"p5", studentId:"s5", studentName:"Dev Kapoor",    course:"JEE Mains 2026",   batch:"Batch B", totalAmount:36000, paidAmount:0,     status:"Pending",  dueDate:"2026-03-15", lastPaidDate:"—" },
-];
+interface Fee {
+  id: number;
+  student: number;
+  student_name?: string;
+  course: number | null;
+  course_title?: string;
+  amount: number;
+  status: "Paid" | "Pending" | "Overdue" | "Partial";
+  due_date: string;
+  paid_date: string | null;
+  method: string;
+  description: string;
+  receipt_no: string;
+}
 
-const BLANK: Omit<Payment,"id"> = {
-  studentId:"", studentName:"", course:"", batch:"", totalAmount:0, paidAmount:0, status:"Pending", dueDate:new Date().toISOString().split("T")[0], lastPaidDate:"—"
-};
+interface Student {
+  id: number;
+  name: string;
+  course?: string;
+}
 
-const STATUS_CFG: Record<Payment["status"], { color: string; icon: React.ReactNode }> = {
+const STATUS_CFG: Record<Fee["status"], { color: string; icon: React.ReactNode }> = {
   Paid:    { color:"bg-success-50 text-success-600 border-success-200", icon:<CheckCircle size={12}/> },
-  Unpaid:  { color:"bg-surface-muted text-text-muted border-surface-border", icon:<Clock size={12}/> },
   Pending: { color:"bg-warning-50 text-warning-600 border-warning-200",  icon:<Clock size={12}/> },
   Overdue: { color:"bg-danger-50 text-danger-600 border-danger-200",     icon:<AlertCircle size={12}/> },
   Partial: { color:"bg-primary-50 text-primary-600 border-primary-200",  icon:<Clock size={12}/> },
 };
 
+const BLANK_ADD = {
+  student: "",
+  amount: 0,
+  due_date: new Date().toISOString().split("T")[0],
+  status: "Pending" as Fee["status"],
+  method: "",
+  description: "",
+};
+
+const BLANK_EDIT = {
+  status: "Paid" as Fee["status"],
+  paid_date: new Date().toISOString().split("T")[0],
+  method: "",
+};
+
 export default function FeesPage() {
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [modalOpen, setModal]   = useState(false);
-  const [editing, setEditing]   = useState<Payment|null>(null);
-  const [form, setForm]         = useState<Omit<Payment,"id">>(BLANK);
-  const [deleteId, setDeleteId] = useState<string|null>(null);
+  const [payments, setPayments]   = useState<Fee[]>([]);
+  const [students, setStudents]   = useState<Student[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [saving, setSaving]       = useState(false);
+  const [modalOpen, setModal]     = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [editing, setEditing]     = useState<Fee | null>(null);
+  const [addForm, setAddForm]     = useState(BLANK_ADD);
+  const [editForm, setEditForm]   = useState(BLANK_EDIT);
+  const [deleteId, setDeleteId]   = useState<number | null>(null);
 
   useEffect(() => {
-    const stored = loadFromStorage<Payment[]>("payments", []);
-    setPayments(stored.length ? stored : SEED);
-    if (!stored.length) saveToStorage("payments", SEED);
+    (async () => {
+      try {
+        const [feesData, studentsData] = await Promise.all([
+          getAll("fees"),
+          getAll("students"),
+        ]);
+        setPayments(feesData);
+        setStudents(studentsData);
+      } catch {
+        alert("Failed to load fees. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const persist = (data: Payment[]) => { setPayments(data); saveToStorage("payments", data); };
+  const openAdd  = () => { setAddForm(BLANK_ADD); setModal(true); };
+  const openEdit = (p: Fee) => { setEditing(p); setEditForm({ status: p.status, paid_date: p.paid_date ?? new Date().toISOString().split("T")[0], method: p.method ?? "" }); setEditModal(true); };
 
-  const openAdd  = () => { setEditing(null); setForm(BLANK); setModal(true); };
-  const openEdit = (p: Payment) => { setEditing(p); const {id:_,...rest}=p; setForm(rest); setModal(true); };
-
-  const handleSave = () => {
-    if (!form.studentName.trim() || !form.course.trim()) return;
-    if (editing) {
-      persist(payments.map(p => p.id === editing.id ? {...form, id:editing.id} : p));
-    } else {
-      persist([...payments, {...form, id:generateId()}]);
+  const handleAdd = async () => {
+    if (!addForm.student || !addForm.amount) return;
+    setSaving(true);
+    try {
+      const created = await createOne("fees", {
+        student: Number(addForm.student),
+        amount: addForm.amount,
+        due_date: addForm.due_date,
+        status: addForm.status,
+        method: addForm.method,
+        description: addForm.description,
+      });
+      setPayments(prev => [...prev, created]);
+      setModal(false);
+    } catch {
+      alert("Failed to record payment. Please try again.");
+    } finally {
+      setSaving(false);
     }
-    setModal(false);
+  };
+
+  const handleEdit = async () => {
+    if (!editing) return;
+    setSaving(true);
+    try {
+      const updated = await updateOne("fees", editing.id, editForm);
+      setPayments(prev => prev.map(p => p.id === editing.id ? updated : p));
+      setEditModal(false);
+      setEditing(null);
+    } catch {
+      alert("Failed to update payment. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteOne("fees", id);
+      setPayments(prev => prev.filter(p => p.id !== id));
+      setDeleteId(null);
+    } catch {
+      alert("Failed to delete payment record. Please try again.");
+    }
   };
 
   const totals = {
-    collected: payments.filter(p=>p.status==="Paid").reduce((a,p)=>a+p.paidAmount,0),
-    pending:   payments.filter(p=>["Pending","Overdue","Partial"].includes(p.status)).reduce((a,p)=>a+(p.totalAmount-p.paidAmount),0),
+    collected: payments.filter(p=>p.status==="Paid").reduce((a,p)=>a+p.amount,0),
+    pending:   payments.filter(p=>["Pending","Overdue","Partial"].includes(p.status)).reduce((a,p)=>a+p.amount,0),
     students:  payments.filter(p=>p.status==="Paid").length,
   };
 
@@ -94,33 +166,30 @@ export default function FeesPage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr>{["Student","Course / Batch","Total Fee","Paid","Balance","Due Date","Status",""].map(h=>(
+              <tr>{["Student","Course","Amount","Due Date","Paid Date","Status",""].map(h=>(
                 <th key={h} className="table-header first:pl-6 last:pr-6 whitespace-nowrap">{h}</th>
               ))}</tr>
             </thead>
             <tbody>
-              {payments.map(p => (
+              {loading ? (
+                <tr><td colSpan={7} className="text-center py-12 text-sm text-text-muted animate-pulse">Loading payments…</td></tr>
+              ) : payments.map(p => (
                 <tr key={p.id} className="hover:bg-surface-muted transition-colors">
                   <td className="table-cell pl-6">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white text-xs font-bold">{p.studentName.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>
+                        <span className="text-white text-xs font-bold">{(p.student_name ?? "?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}</span>
                       </div>
-                      <p className="text-sm font-semibold text-text-primary whitespace-nowrap">{p.studentName}</p>
+                      <p className="text-sm font-semibold text-text-primary whitespace-nowrap">{p.student_name ?? `Student #${p.student}`}</p>
                     </div>
                   </td>
-                  <td className="table-cell"><p className="text-sm text-text-primary">{p.course}</p><p className="text-xs text-text-muted">{p.batch}</p></td>
-                  <td className="table-cell"><span className="text-sm font-semibold text-text-primary">{fmt(p.totalAmount)}</span></td>
-                  <td className="table-cell"><span className="text-sm text-success-600 font-medium">{fmt(p.paidAmount)}</span></td>
+                  <td className="table-cell"><p className="text-sm text-text-primary">{p.course_title ?? "—"}</p></td>
+                  <td className="table-cell"><span className="text-sm font-semibold text-text-primary">{fmt(p.amount)}</span></td>
+                  <td className="table-cell"><span className="text-sm text-text-muted whitespace-nowrap">{p.due_date}</span></td>
+                  <td className="table-cell"><span className="text-sm text-text-muted whitespace-nowrap">{p.paid_date ?? "—"}</span></td>
                   <td className="table-cell">
-                    <span className={clsx("text-sm font-semibold", p.totalAmount-p.paidAmount>0?"text-danger-600":"text-success-600")}>
-                      {fmt(p.totalAmount-p.paidAmount)}
-                    </span>
-                  </td>
-                  <td className="table-cell"><span className="text-sm text-text-muted whitespace-nowrap">{p.dueDate}</span></td>
-                  <td className="table-cell">
-                    <span className={clsx("badge border flex items-center gap-1", STATUS_CFG[p.status].color)}>
-                      {STATUS_CFG[p.status].icon}{p.status}
+                    <span className={clsx("badge border flex items-center gap-1", STATUS_CFG[p.status]?.color ?? "")}>
+                      {STATUS_CFG[p.status]?.icon}{p.status}
                     </span>
                   </td>
                   <td className="table-cell pr-6">
@@ -128,7 +197,7 @@ export default function FeesPage() {
                       <button onClick={() => openEdit(p)} className="p-1.5 rounded-lg hover:bg-primary-50 text-text-muted hover:text-primary-500"><Pencil size={13}/></button>
                       {deleteId===p.id ? (
                         <div className="flex gap-1">
-                          <button onClick={()=>{persist(payments.filter(x=>x.id!==p.id));setDeleteId(null);}} className="text-xs px-1.5 py-0.5 bg-danger-500 text-white rounded">Yes</button>
+                          <button onClick={()=>handleDelete(p.id)} className="text-xs px-1.5 py-0.5 bg-danger-500 text-white rounded">Yes</button>
                           <button onClick={()=>setDeleteId(null)} className="text-xs px-1.5 py-0.5 bg-surface-muted text-text-muted rounded">No</button>
                         </div>
                       ) : (
@@ -143,44 +212,67 @@ export default function FeesPage() {
         </div>
       </div>
 
-      {/* Add/Edit Modal */}
-      <Modal isOpen={modalOpen} title={editing?"Edit Payment":"Record Payment"} onClose={()=>setModal(false)} size="lg">
+      {/* Add Payment Modal */}
+      <Modal isOpen={modalOpen} title="Record Payment" onClose={()=>setModal(false)} size="lg">
         <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Student</label>
+            <select value={addForm.student} onChange={e=>setAddForm(p=>({...p,student:e.target.value}))} className="input-field">
+              <option value="">Select student…</option>
+              {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Student Name</label>
-              <input value={form.studentName} onChange={e=>setForm(p=>({...p,studentName:e.target.value}))} placeholder="e.g. Aarav Mehta" className="input-field"/>
-            </div>
             <div>
-              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Course</label>
-              <input value={form.course} onChange={e=>setForm(p=>({...p,course:e.target.value}))} placeholder="e.g. JEE Mains" className="input-field"/>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Batch</label>
-              <input value={form.batch} onChange={e=>setForm(p=>({...p,batch:e.target.value}))} placeholder="e.g. Batch A" className="input-field"/>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Total Amount (₹)</label>
-              <input type="number" min={0} value={form.totalAmount} onChange={e=>setForm(p=>({...p,totalAmount:Number(e.target.value)}))} className="input-field"/>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Amount Paid (₹)</label>
-              <input type="number" min={0} max={form.totalAmount} value={form.paidAmount} onChange={e=>setForm(p=>({...p,paidAmount:Number(e.target.value)}))} className="input-field"/>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Amount (₹)</label>
+              <input type="number" min={0} value={addForm.amount} onChange={e=>setAddForm(p=>({...p,amount:Number(e.target.value)}))} className="input-field"/>
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Status</label>
-              <select value={form.status} onChange={e=>setForm(p=>({...p,status:e.target.value as Payment["status"]}))} className="input-field">
-                {(["Paid","Unpaid","Pending","Overdue","Partial"] as const).map(v=><option key={v}>{v}</option>)}
+              <select value={addForm.status} onChange={e=>setAddForm(p=>({...p,status:e.target.value as Fee["status"]}))} className="input-field">
+                {(["Paid","Pending","Overdue","Partial"] as const).map(v=><option key={v}>{v}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Due Date</label>
-              <input type="date" value={form.dueDate} onChange={e=>setForm(p=>({...p,dueDate:e.target.value}))} className="input-field"/>
+              <input type="date" value={addForm.due_date} onChange={e=>setAddForm(p=>({...p,due_date:e.target.value}))} className="input-field"/>
             </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Method</label>
+              <input value={addForm.method} onChange={e=>setAddForm(p=>({...p,method:e.target.value}))} placeholder="e.g. UPI, Cash" className="input-field"/>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Description</label>
+            <input value={addForm.description} onChange={e=>setAddForm(p=>({...p,description:e.target.value}))} placeholder="Optional note…" className="input-field"/>
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <button onClick={()=>setModal(false)} className="px-4 py-2 text-sm border border-surface-border rounded-xl hover:bg-surface-muted">Cancel</button>
-            <button onClick={handleSave} disabled={!form.studentName.trim()} className="btn-primary disabled:opacity-50">{editing?"Save Changes":"Record"}</button>
+            <button onClick={handleAdd} disabled={!addForm.student || saving} className="btn-primary disabled:opacity-50">{saving ? "Saving…" : "Record"}</button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Edit (Mark as Paid) Modal */}
+      <Modal isOpen={editModal} title="Update Payment Status" onClose={()=>setEditModal(false)}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Status</label>
+            <select value={editForm.status} onChange={e=>setEditForm(p=>({...p,status:e.target.value as Fee["status"]}))} className="input-field">
+              {(["Paid","Pending","Overdue","Partial"] as const).map(v=><option key={v}>{v}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Paid Date</label>
+            <input type="date" value={editForm.paid_date} onChange={e=>setEditForm(p=>({...p,paid_date:e.target.value}))} className="input-field"/>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Method</label>
+            <input value={editForm.method} onChange={e=>setEditForm(p=>({...p,method:e.target.value}))} placeholder="e.g. UPI, Cash" className="input-field"/>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button onClick={()=>setEditModal(false)} className="px-4 py-2 text-sm border border-surface-border rounded-xl hover:bg-surface-muted">Cancel</button>
+            <button onClick={handleEdit} disabled={saving} className="btn-primary disabled:opacity-50">{saving ? "Saving…" : "Save Changes"}</button>
           </div>
         </div>
       </Modal>

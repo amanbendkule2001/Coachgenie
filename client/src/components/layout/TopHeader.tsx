@@ -144,6 +144,8 @@ export default function TopHeader({ tutorName }: TopHeaderProps) {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("tutorAuth");
     localStorage.removeItem("tutorName");
     localStorage.removeItem("tutorEmail");

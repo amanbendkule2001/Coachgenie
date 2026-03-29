@@ -2,9 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { TrendingUp, AlertTriangle, Target, Loader2 } from "lucide-react";
-import { loadFromStorage } from "@/lib/storage";
-import { Student } from "@/types";
-import clsx from "clsx";
+
+const BASE_URL = "http://localhost:8000/api";
+
+function authHeaders() {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+  };
+}
 
 interface InsightData {
   atRisk: number;
@@ -17,23 +23,37 @@ export default function AIInsightsPanel() {
   const [data, setData] = useState<InsightData>({ atRisk: 0, averageScore: 0, topPerformers: 0, loading: true });
 
   useEffect(() => {
-    // Simulate AI processing delay
-    const timer = setTimeout(() => {
-      const students = loadFromStorage<Student[]>("students", []);
-      if (!students.length) {
-        setData({ atRisk: 0, averageScore: 0, topPerformers: 0, loading: false });
-        return;
+    (async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/analytics/performance/`, { headers: authHeaders() });
+        if (!res.ok) throw new Error("Failed to fetch performance analytics");
+        const perf = await res.json();
+
+        setData({
+          atRisk: perf.at_risk_count ?? 0,
+          averageScore: perf.avg_score ?? 0,
+          topPerformers: perf.top_performers?.length ?? 0,
+          loading: false,
+        });
+      } catch {
+        // Fallback: try computing from students list
+        try {
+          const res2 = await fetch(`${BASE_URL}/students/`, { headers: authHeaders() });
+          if (!res2.ok) throw new Error();
+          const raw = await res2.json();
+          const students = raw.results ?? raw;
+          const active = students.filter((s: any) => s.status !== "Inactive");
+          const atRisk = active.filter((s: any) => (s.score ?? 0) < 50 || s.status === "At Risk").length;
+          const topP = active.filter((s: any) => (s.score ?? 0) >= 85).length;
+          const avg = active.length > 0
+            ? Math.round(active.reduce((acc: number, s: any) => acc + (s.score ?? 0), 0) / active.length)
+            : 0;
+          setData({ atRisk, averageScore: avg, topPerformers: topP, loading: false });
+        } catch {
+          setData({ atRisk: 0, averageScore: 0, topPerformers: 0, loading: false });
+        }
       }
-
-      const active = students.filter((s) => s.status !== "Inactive");
-      const atRisk = active.filter((s) => s.score < 50 || s.status === "At Risk").length;
-      const topP = active.filter((s) => s.score >= 85).length;
-      const avg = active.length > 0 ? Math.round(active.reduce((acc, s) => acc + s.score, 0) / active.length) : 0;
-
-      setData({ atRisk, averageScore: avg, topPerformers: topP, loading: false });
-    }, 800);
-
-    return () => clearTimeout(timer);
+    })();
   }, []);
 
   return (

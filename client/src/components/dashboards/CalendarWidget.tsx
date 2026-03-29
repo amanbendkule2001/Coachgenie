@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
-import { loadFromStorage } from "@/lib/storage";
+import { getAll } from "@/lib/storage";
 import { Activity } from "@/types";
 import clsx from "clsx";
 
@@ -27,8 +27,15 @@ export default function CalendarWidget() {
   const [activities, setActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
-    setActivities(loadFromStorage<Activity[]>("activities", []));
-  }, []);
+    (async () => {
+      try {
+        const data = await getAll(`activities?month=${currentDate.getMonth() + 1}&year=${currentDate.getFullYear()}`);
+        setActivities(data);
+      } catch {
+        // Silently fail for calendar — not critical
+      }
+    })();
+  }, [currentDate]);
 
   const month = currentDate.getMonth();
   const year = currentDate.getFullYear();

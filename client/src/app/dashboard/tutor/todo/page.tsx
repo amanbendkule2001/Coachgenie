@@ -2,17 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Plus, CheckSquare, Trash2, Calendar, AlertCircle, Sparkles } from "lucide-react";
-import { loadFromStorage, saveToStorage, generateId } from "@/lib/storage";
+import { getAll, createOne, updateOne, deleteOne } from "@/lib/storage";
 import { Todo } from "@/types";
 import clsx from "clsx";
-
-const SEED: Todo[] = [
-  { id:"td1", task:"Prepare question paper for JEE Mock Test", priority:"High", completed:false, createdAt:"2026-03-10" },
-  { id:"td2", task:"Review pending fee payments for Batch B",  priority:"Medium",completed:false, createdAt:"2026-03-11" },
-  { id:"td3", task:"Upload Thermodynamics lecture notes",      priority:"Low",   completed:false, createdAt:"2026-03-11" },
-  { id:"td4", task:"Call parents of at-risk students",         priority:"High",  completed:true,  createdAt:"2026-03-09" },
-  { id:"td5", task:"Schedule doubt clearing session",          priority:"Medium",completed:true,  createdAt:"2026-03-08" },
-];
 
 const PRIORITIES: Todo["priority"][] = ["Low", "Medium", "High"];
 
@@ -23,31 +15,75 @@ const PRIORITY_COLORS: Record<Todo["priority"], { text: string; bg: string; badg
 };
 
 export default function TodoPage() {
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [newTask, setNewTask] = useState("");
+  const [todos, setTodos]         = useState<Todo[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [newTask, setNewTask]     = useState("");
   const [newPriority, setNewPriority] = useState<Todo["priority"]>("Medium");
-  const [filter, setFilter] = useState<"All"|"Active"|"Completed">("All");
+  const [filter, setFilter]       = useState<"All"|"Active"|"Completed">("All");
+  const [addingSaving, setAddingSaving] = useState(false);
 
   useEffect(() => {
-    const stored = loadFromStorage<Todo[]>("todos", []);
-    setTodos(stored.length ? stored : SEED);
-    if (!stored.length) saveToStorage("todos", SEED);
+    (async () => {
+      try {
+        const data = await getAll("todos");
+        setTodos(data);
+      } catch {
+        alert("Failed to load tasks. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const persist = (data: Todo[]) => { setTodos(data); saveToStorage("todos", data); };
-
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTask.trim()) return;
-    const todo: Todo = { id: generateId(), task: newTask.trim(), priority: newPriority, completed: false, createdAt: new Date().toISOString().split("T")[0] };
-    persist([todo, ...todos]);
-    setNewTask("");
-    setNewPriority("Medium");
+    setAddingSaving(true);
+    try {
+      const created = await createOne("todos", {
+        title: newTask.trim(),
+        priority: newPriority,
+        completed: false,
+        due_date: new Date().toISOString().split("T")[0],
+        notes: "",
+      });
+      setTodos(prev => [created, ...prev]);
+      setNewTask("");
+      setNewPriority("Medium");
+    } catch {
+      alert("Failed to add task. Please try again.");
+    } finally {
+      setAddingSaving(false);
+    }
   };
 
-  const toggle = (id: string) => persist(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-  const remove = (id: string) => persist(todos.filter(t => t.id !== id));
-  const clearCompleted = () => persist(todos.filter(t => !t.completed));
+  const toggle = async (todo: Todo) => {
+    try {
+      const updated = await updateOne("todos", Number(todo.id), { completed: !todo.completed });
+      setTodos(prev => prev.map(t => t.id === todo.id ? { ...t, ...updated } : t));
+    } catch {
+      alert("Failed to update task. Please try again.");
+    }
+  };
+
+  const remove = async (id: string) => {
+    try {
+      await deleteOne("todos", Number(id));
+      setTodos(prev => prev.filter(t => t.id !== id));
+    } catch {
+      alert("Failed to delete task. Please try again.");
+    }
+  };
+
+  const clearCompleted = async () => {
+    const completed = todos.filter(t => t.completed);
+    try {
+      await Promise.all(completed.map(t => deleteOne("todos", Number(t.id))));
+      setTodos(prev => prev.filter(t => !t.completed));
+    } catch {
+      alert("Failed to clear completed tasks. Please try again.");
+    }
+  };
 
   const filtered = useMemo(() => {
     if (filter === "All") return todos;
@@ -59,6 +95,9 @@ export default function TodoPage() {
     completed: todos.filter(t=>t.completed).length,
     active: todos.filter(t=>!t.completed).length,
   };
+
+  // Support both 'task' (old local type) and 'title' (API field)
+  const getLabel = (t: Todo) => (t as any).title ?? (t as any).task ?? "";
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -83,8 +122,8 @@ export default function TodoPage() {
             <select value={newPriority} onChange={e=>setNewPriority(e.target.value as Todo["priority"])} className="input-field w-32 shrink-0">
               {PRIORITIES.map(p=><option key={p} value={p}>{p} Priority</option>)}
             </select>
-            <button type="submit" disabled={!newTask.trim()} className="btn-primary shrink-0 disabled:opacity-50">
-              <Plus size={16}/> Add Task
+            <button type="submit" disabled={!newTask.trim() || addingSaving} className="btn-primary shrink-0 disabled:opacity-50">
+              <Plus size={16}/> {addingSaving ? "Adding…" : "Add Task"}
             </button>
           </div>
         </form>
@@ -112,7 +151,11 @@ export default function TodoPage() {
 
         {/* List */}
         <div className="divide-y divide-surface-border">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="py-12 text-center">
+              <p className="text-sm text-text-muted animate-pulse">Loading tasks…</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="py-12 text-center flex flex-col items-center gap-3">
               <CheckSquare size={40} className="text-surface-border"/>
               <p className="text-sm text-text-muted font-medium">No tasks found. Relax or add a new one!</p>
@@ -124,20 +167,20 @@ export default function TodoPage() {
 
                 {/* Left: Checkbox + Text */}
                 <div className="flex items-start gap-4 flex-1 min-w-0">
-                  <button onClick={() => toggle(t.id)}
+                  <button onClick={() => toggle(t)}
                     className={clsx("w-5 h-5 rounded flex shrink-0 items-center justify-center border transition-all mt-0.5",
                       t.completed ? "bg-primary-500 border-primary-500 text-white" : "border-surface-border text-transparent hover:border-primary-400 hover:bg-primary-50")}>
                     <CheckSquare size={12}/>
                   </button>
                   <div className="flex-1 min-w-0">
                     <p className={clsx("text-sm font-medium transition-all break-words", t.completed ? "text-text-muted line-through" : "text-text-primary")}>
-                      {t.task}
+                      {getLabel(t)}
                     </p>
                     <div className="flex items-center gap-3 mt-1.5 opacity-80">
                       <span className={clsx("badge border flex items-center gap-1 !px-1.5 !py-0", PRIORITY_COLORS[t.priority].badge)}>
                         {PRIORITY_COLORS[t.priority].icon}{t.priority}
                       </span>
-                      <span className="text-[11px] text-text-muted flex items-center gap-1"><Calendar size={10}/> {t.createdAt}</span>
+                      <span className="text-[11px] text-text-muted flex items-center gap-1"><Calendar size={10}/> {(t as any).due_date ?? (t as any).createdAt ?? ""}</span>
                     </div>
                   </div>
                 </div>
