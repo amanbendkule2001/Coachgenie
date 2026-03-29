@@ -84,7 +84,7 @@ WSGI_APPLICATION = "smartedu.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME", "Tutors-DB"),
+        "NAME": os.environ.get("DB_NAME", "Tutors_DB"),
         "USER": os.environ.get("DB_USER", "postgres"),
         "PASSWORD": os.environ.get("DB_PASSWORD", "lokesh123"),
         "HOST": os.environ.get("DB_HOST", "localhost"),
