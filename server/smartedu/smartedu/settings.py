@@ -8,7 +8,7 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "change-me-in-production-use-env-var")
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure--)3_&f#b_x8pr!ny5)+7wo(4cexmu0(rt_w!sl_^%-001yu9yg")
 
 DEBUG = os.environ.get("DEBUG", "True") == "True"
 
