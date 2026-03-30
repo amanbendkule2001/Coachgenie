@@ -87,7 +87,7 @@ DATABASES = {
         "NAME": os.environ.get("DB_NAME", "smartedu_django"),
         "USER": os.environ.get("DB_USER", "postgres"),
         "PASSWORD": os.environ.get("DB_PASSWORD", "lokesh123"),
-        "HOST": os.environ.get("DB_HOST", "192.168.1.58"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
         "OPTIONS": {
             "connect_timeout": 10,
