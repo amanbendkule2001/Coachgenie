@@ -36,7 +36,6 @@ class EnquirySerializer(serializers.ModelSerializer):
             "email",
             "phone",
             "subject",      # Interested Course
-            "grade",
             "stage",
             "source",
             "notes",
