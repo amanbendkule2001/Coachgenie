@@ -29,13 +29,13 @@ export default function ActivitiesPage() {
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModal] = useState(false);
     const [form, setForm] = useState<Omit<Activity, "id">>(BLANK);
-    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [deleteId, setDeleteId] = useState<string | number | null>(null);
     const [saving, setSaving] = useState(false);
 
-    // ── Load activities from API on mount ──────────────────────────────────────
+    // ── Load activities ─────────────────────────────────────────────
     useEffect(() => {
         getAll("activities")
-            .then((data) => {
+            .then((data = []) => {
                 const sorted = [...data].sort(
                     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
                 );
@@ -44,48 +44,49 @@ export default function ActivitiesPage() {
             .finally(() => setLoading(false));
     }, []);
 
-    // ── Create ─────────────────────────────────────────────────────────────────
+    // ── Create ─────────────────────────────────────────────────────
     const handleSave = async () => {
         if (!form.title.trim()) return;
+
         setSaving(true);
         try {
             const created = await createOne("activities", {
                 title: form.title,
-                activity_type: form.type,        // Django field is activity_type
-                start_date: form.date,         // Django field is start_date
+                type: form.type,
+                date: form.date,
                 description: form.description,
             });
-            // Merge and re-sort
+
+            // ✅ FIXED: Use backend response directly
             setActivities((prev) =>
-                [...prev, {
-                    id: created.id,
-                    title: created.title,
-                    type: created.activity_type,
-                    date: created.start_date,
-                    description: created.description,
-                }].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                [...prev, created].sort(
+                    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+                )
             );
+
             setModal(false);
             setForm(BLANK);
-        } catch {
+        } catch (err) {
+            console.error("Create Activity Error:", err); // ✅ FIXED
             showToast("Failed to save activity. Please try again.");
         } finally {
             setSaving(false);
         }
     };
 
-    // ── Delete ─────────────────────────────────────────────────────────────────
-    const handleDelete = async (id: string) => {
+    // ── Delete ─────────────────────────────────────────────────────
+    const handleDelete = async (id: string | number) => {
         try {
-            await deleteOne("activities", Number(id));
+            await deleteOne("activities", id as number);
             setActivities((prev) => prev.filter((a) => a.id !== id));
             setDeleteId(null);
-        } catch {
+        } catch (err) {
+            console.error("Delete Activity Error:", err); // ✅ FIXED
             showToast("Failed to delete activity. Please try again.");
         }
     };
 
-    // ── Group by Month Year ────────────────────────────────────────────────────
+    // ── Group by Month ─────────────────────────────────────────────
     const grouped = activities.reduce((acc, curr) => {
         const d = new Date(curr.date);
         const month = d.toLocaleString("en-US", { month: "long", year: "numeric" });
@@ -94,7 +95,7 @@ export default function ActivitiesPage() {
         return acc;
     }, {} as Record<string, Activity[]>);
 
-    // ── Render ─────────────────────────────────────────────────────────────────
+    // ── Render ─────────────────────────────────────────────────────
     return (
         <div className="space-y-6 animate-fade-in max-w-5xl mx-auto">
 
@@ -111,7 +112,7 @@ export default function ActivitiesPage() {
                 </button>
             </div>
 
-            {/* Loading state */}
+            {/* Loading */}
             {loading ? (
                 <div className="page-card py-16 text-center">
                     <p className="text-sm text-text-muted animate-pulse">Loading activities…</p>
@@ -131,6 +132,7 @@ export default function ActivitiesPage() {
                             <h2 className="text-sm font-bold text-text-secondary uppercase tracking-widest border-b border-surface-border pb-2 mb-4">
                                 {month}
                             </h2>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {acts.map((a) => {
                                     const day = new Date(a.date).getDate().toString().padStart(2, "0");
@@ -145,17 +147,14 @@ export default function ActivitiesPage() {
                                                 style.border
                                             )}
                                         >
-                                            {/* Left colour bar */}
                                             <div className={clsx("absolute left-0 top-0 bottom-0 w-1.5", style.icon.split(" ")[0])} />
 
                                             <div className="flex items-start gap-4 p-5">
-                                                {/* Date cube */}
                                                 <div className={clsx("w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0 border border-white/50 shadow-sm", style.icon)}>
                                                     <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{dName}</span>
                                                     <span className="text-xl font-black">{day}</span>
                                                 </div>
 
-                                                {/* Content */}
                                                 <div className="flex-1 min-w-0">
                                                     <span className={clsx("text-[10px] font-bold uppercase tracking-widest mb-1 block", style.icon.split(" ")[1])}>
                                                         {a.type}
@@ -165,22 +164,11 @@ export default function ActivitiesPage() {
                                                 </div>
                                             </div>
 
-                                            {/* Hover delete */}
                                             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 {deleteId === a.id ? (
                                                     <div className="flex gap-1 bg-[var(--surface-card)] p-1 rounded-lg shadow-sm border border-surface-border">
-                                                        <button
-                                                            onClick={() => handleDelete(a.id)}
-                                                            className="text-xs px-2 bg-danger-500 text-white rounded"
-                                                        >
-                                                            Yes
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setDeleteId(null)}
-                                                            className="text-xs px-2 bg-surface-muted text-text-muted rounded"
-                                                        >
-                                                            No
-                                                        </button>
+                                                        <button onClick={() => handleDelete(a.id)} className="text-xs px-2 bg-danger-500 text-white rounded">Yes</button>
+                                                        <button onClick={() => setDeleteId(null)} className="text-xs px-2 bg-surface-muted text-text-muted rounded">No</button>
                                                     </div>
                                                 ) : (
                                                     <button
@@ -201,60 +189,36 @@ export default function ActivitiesPage() {
                 </div>
             )}
 
-            {/* Add Modal */}
+            {/* Modal */}
             <Modal isOpen={modalOpen} title="Add Event / Holiday" onClose={() => setModal(false)}>
                 <div className="space-y-4">
                     <div>
                         <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Title</label>
-                        <input
-                            value={form.title}
-                            onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-                            placeholder="e.g. Navratri Holiday or Mock Test"
-                            className="input-field"
-                        />
+                        <input value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} className="input-field" placeholder="Enter event title" title="Event title" />
                     </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="type-select" className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Type</label>
-                            <select
-                                id="type-select"
-                                value={form.type}
-                                onChange={(e) => setForm((p) => ({ ...p, type: e.target.value as Activity["type"] }))}
-                                className="input-field"
-                            >
+                            <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Type</label>
+                            <select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value as Activity["type"] }))} className="input-field" title="Event type">
                                 {TYPES.map((t) => <option key={t}>{t}</option>)}
                             </select>
                         </div>
+
                         <div>
                             <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Date</label>
-                            <input
-                                type="date"
-                                value={form.date}
-                                onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
-                                placeholder="Select a date"
-                                className="input-field"
-                            />
+                            <input type="date" value={form.date} onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))} className="input-field" title="Event date" />
                         </div>
                     </div>
+
                     <div>
                         <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Description</label>
-                        <textarea
-                            rows={3}
-                            value={form.description}
-                            onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-                            placeholder="Event details..."
-                            className="input-field resize-none"
-                        />
+                        <textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} className="input-field" placeholder="Enter event description" title="Event description" />
                     </div>
-                    <div className="flex justify-end gap-3 pt-2">
-                        <button onClick={() => setModal(false)} className="px-4 py-2 text-sm border border-surface-border rounded-xl hover:bg-surface-muted">
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleSave}
-                            disabled={!form.title.trim() || saving}
-                            className="btn-primary disabled:opacity-50"
-                        >
+
+                    <div className="flex justify-end gap-3">
+                        <button onClick={() => setModal(false)}>Cancel</button>
+                        <button onClick={handleSave} disabled={!form.title.trim() || saving}>
                             {saving ? "Saving…" : "Add to Calendar"}
                         </button>
                     </div>
