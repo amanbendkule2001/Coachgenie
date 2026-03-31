@@ -36,7 +36,6 @@ class Enquiry(models.Model):
 
     # 📚 Academic Info
     subject = models.CharField(max_length=100, blank=True, db_index=True)
-    grade = models.CharField(max_length=50, blank=True)
 
     # 📊 Status Tracking
     stage = models.CharField(
@@ -64,10 +63,6 @@ class Enquiry(models.Model):
     class Meta:
         db_table = "enquiries"
         ordering = ["-created_at"]
-
-    def clean(self):
-        if self.phone and not re.match(r'^\d{10}$', self.phone):
-            raise ValidationError("Phone number must be 10 digits")
 
     def __str__(self):
         return f"{self.name} — {self.stage}"
