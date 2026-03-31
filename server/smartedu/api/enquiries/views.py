@@ -14,11 +14,7 @@ class EnquiryViewSet(viewsets.ModelViewSet):
     ordering         = ["-created_at"]
 
     def get_queryset(self):
-        return Enquiry.objects.filter(tutor=self.request.user.tutor)
+        return Enquiry.objects.filter(tutor=self.request.user)
 
     def perform_create(self, serializer):
-        from api.users.models import Tutor
-        tutor = Tutor.objects.filter(user=self.request.user).first()
-        if not tutor:
-            raise Exception("Tutor not found")
-        serializer.save(tutor=tutor)
+        serializer.save(tutor=self.request.user)
