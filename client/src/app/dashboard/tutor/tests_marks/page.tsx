@@ -48,7 +48,7 @@ export default function TestsPage() {
     useEffect(() => {
         (async () => {
             try {
-                const data = await getAll("tests_marks"); // ✅ FIXED
+                const data = await getAll("tests/tests_marks"); // ✅ FIXED
                 setTests(data);
             } catch (err) {
                 console.error(err);
@@ -64,7 +64,7 @@ export default function TestsPage() {
 
         setSaving(true);
         try {
-            const created = await createOne("tests_marks", {
+            const created = await createOne("tests/tests_marks", {
                 ...form,
                 status: form.status === "Scheduled" ? "Scheduled" : "Completed", // mapping
             });
@@ -82,7 +82,7 @@ export default function TestsPage() {
 
     const handleDelete = async (id: number) => {
         try {
-            await deleteOne("tests_marks", id); // ✅ FIXED
+            await deleteOne("tests/tests_marks", id); // ✅ FIXED
             setTests(prev => prev.filter(t => t.id !== id));
             setDeleteId(null);
             if (activeTest?.id === id) setActive(null);
@@ -94,7 +94,7 @@ export default function TestsPage() {
 
     const handleMarkComplete = async (test: Test) => {
         try {
-            const updated = await updateOne("tests_marks", test.id, {
+            const updated = await updateOne("tests/tests_marks", test.id, {
                 status: "Completed",
             });
 
