@@ -1,14 +1,11 @@
 // New storage.ts — API helper layer
 const BASE_URL = "http://localhost:8000/api";
 
-function getToken() {
-  return localStorage.getItem("accessToken");
-}
-
 function authHeaders() {
+  const token = localStorage.getItem("accessToken");
   return {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${getToken()}`,
+    Authorization: `Bearer ${token}`,
   };
 }
 
