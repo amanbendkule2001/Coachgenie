@@ -10,7 +10,7 @@ class MarkSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source="student.name", read_only=True)
 
     class Meta:
-        model  = Mark
+        model = Mark
         fields = [
             "id", "test", "student", "student_name",
             "marks", "percentage", "remarks", "created_at"
@@ -21,37 +21,49 @@ class MarkSerializer(serializers.ModelSerializer):
 class TestSerializer(serializers.ModelSerializer):
     marks = MarkSerializer(many=True, read_only=True)
 
-    # Frontend sends "totalMarks", Django model has "total_marks"
+    title = serializers.CharField(required=True)
+    subject = serializers.CharField(required=True)
+
+    status = serializers.ChoiceField(
+        choices=["Scheduled", "Completed", "Cancelled"],
+        required=True
+    )
+
+    notes = serializers.CharField(required=False, allow_blank=True)
+
     totalMarks = serializers.FloatField(
         source="total_marks",
-        required=False,
-        default=100
+        required=True
     )
-    # Frontend sends "testDate" or "date" — accept both
-    testDate = serializers.DateField(
-        source="date",
-        required=False,
-        allow_null=True
-    )
+
+    date = serializers.DateField(required=True)
 
     class Meta:
-        model  = Test
+        model = Test
         fields = [
-            "id", "title", "subject", "status", "course", "notes",
-            "date",        # accept directly
-            "testDate",    # → date
-            "total_marks", # accept directly
-            "totalMarks",  # → total_marks
+            "id",
+            "title",
+            "subject",
+            "status",
+            "date",
+            "totalMarks",
+            "notes",
             "marks",
-            "created_at", "updated_at",
         ]
-        read_only_fields = ["id", "tutor", "created_at", "updated_at"]
+        read_only_fields = ["id"]
 
     def to_representation(self, instance):
-        """Return both field name versions so frontend can read either."""
         data = super().to_representation(instance)
+
         data["totalMarks"] = instance.total_marks
-        data["total_marks"] = instance.total_marks
-        data["testDate"]   = str(instance.date) if instance.date else None
-        data["date"]       = str(instance.date) if instance.date else None
+        data["date"] = str(instance.date) if instance.date else None
+
         return data
+
+    def validate_status(self, value):
+        # Map frontend → backend
+        mapping = {
+            "upcoming": "Scheduled",
+            "completed": "Completed"
+        }
+        return mapping.get(value, value)

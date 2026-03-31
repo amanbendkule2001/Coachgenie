@@ -8,118 +8,144 @@ import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
 
 interface Mark {
-  id: number;
-  student: number;
-  student_name: string;
-  marks: number | null;
-  remarks: string;
+    id: number;
+    student: number;
+    student_name: string;
+    marks: number | null;
+    remarks: string;
 }
 
 interface Test {
-  id: number;
-  title: string;
-  subject: string;
-  date: string;
-  total_marks: number;
-  status: "Upcoming" | "Completed";
-  notes: string;
-  marks?: Mark[];
+    id: number;
+    title: string;
+    subject: string;
+    date: string;
+    totalMarks: number; // ✅ FIXED
+    status: "Scheduled" | "Completed";
+    notes: string;
+    marks?: Mark[];
 }
 
 const BLANK = {
-  title: "",
-  subject: "",
-  date: new Date().toISOString().split("T")[0],
-  total_marks: 100,
-  status: "Upcoming" as Test["status"],
-  notes: "",
+    title: "",
+    subject: "",
+    date: new Date().toISOString().split("T")[0],
+    totalMarks: 100, // ✅ FIXED
+    status: "Scheduled" as Test["status"], // ✅ FIXED
+    notes: "",
 };
 
 export default function TestsPage() {
-  const [tests, setTests]       = useState<Test[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [saving, setSaving]     = useState(false);
-  const [activeTest, setActive] = useState<Test | null>(null);
-  const [modalOpen, setModal]   = useState(false);
-  const [form, setForm]         = useState(BLANK);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [savingMark, setSavingMark] = useState(false);
+    const [tests, setTests] = useState<Test[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [activeTest, setActive] = useState<Test | null>(null);
+    const [modalOpen, setModal] = useState(false);
+    const [form, setForm] = useState(BLANK);
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [savingMark, setSavingMark] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await getAll("tests");
-        setTests(data);
-      } catch {
-        showToast("Failed to load tests. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+    useEffect(() => {
+        (async () => {
+            try {
+                const data = await getAll("tests_marks"); // ✅ FIXED
+                setTests(data);
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to load tests.");
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, []);
 
-  const handleCreate = async () => {
-    if (!form.title.trim()) return;
-    setSaving(true);
-    try {
-      const created = await createOne("tests", form);
-      setTests(prev => [created, ...prev]);
-      setModal(false);
-      setForm(BLANK);
-    } catch {
-      showToast("Failed to create test. Please try again.");
-    } finally {
-      setSaving(false);
-    }
-  };
+    const handleCreate = async () => {
+        if (!form.title.trim()) return;
 
-  const handleDelete = async (id: number) => {
-    try {
-      await deleteOne("tests", id);
-      setTests(prev => prev.filter(t => t.id !== id));
-      setDeleteId(null);
-      if (activeTest?.id === id) setActive(null);
-    } catch {
-      showToast("Failed to delete test. Please try again.");
-    }
-  };
+        setSaving(true);
+        try {
+            const created = await createOne("tests_marks", {
+                ...form,
+                status: form.status === "Scheduled" ? "Scheduled" : "Completed", // mapping
+            });
 
-  const handleMarkComplete = async (test: Test) => {
-    try {
-      const updated = await updateOne("tests", test.id, { status: "Completed" });
-      setTests(prev => prev.map(t => t.id === test.id ? { ...t, ...updated } : t));
-      setActive(prev => prev?.id === test.id ? { ...prev, ...updated } : prev);
-    } catch {
-      showToast("Failed to update test status. Please try again.");
-    }
-  };
+            setTests(prev => [created, ...prev]);
+            setModal(false);
+            setForm(BLANK);
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to create test.");
+        } finally {
+            setSaving(false);
+        }
+    };
 
-  const updateMark = async (mark: Mark, val: string) => {
-    const numVal = val === "" ? null : Number(val);
-    setSavingMark(true);
-    try {
-      const updated = await updateOne("tests/marks", mark.id, { marks: numVal });
-      // Update marks in local state
-      setTests(prev => prev.map(t => {
-        if (!t.marks) return t;
-        return { ...t, marks: t.marks.map(m => m.id === mark.id ? { ...m, marks: numVal } : m) };
-      }));
-      setActive(prev => {
-        if (!prev?.marks) return prev;
-        return { ...prev, marks: prev.marks.map(m => m.id === mark.id ? { ...m, marks: numVal } : m) };
-      });
-    } catch {
-      showToast("Failed to save mark. Please try again.");
-    } finally {
-      setSavingMark(false);
-    }
-  };
+    const handleDelete = async (id: number) => {
+        try {
+            await deleteOne("tests_marks", id); // ✅ FIXED
+            setTests(prev => prev.filter(t => t.id !== id));
+            setDeleteId(null);
+            if (activeTest?.id === id) setActive(null);
+        } catch (err) {
+            console.error(err);
+            showToast("Delete failed.");
+        }
+    };
 
-  const avg = (t: Test) => {
-    const scored = (t.marks ?? []).filter(m => m.marks !== null);
-    if (!scored.length) return null;
-    return Math.round(scored.reduce((a, m) => a + (m.marks ?? 0), 0) / scored.length);
-  };
+    const handleMarkComplete = async (test: Test) => {
+        try {
+            const updated = await updateOne("tests_marks", test.id, {
+                status: "Completed",
+            });
+
+            setTests(prev => prev.map(t => t.id === test.id ? updated : t));
+            setActive(updated);
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to update status.");
+        }
+    };
+
+    const updateMark = async (mark: Mark, val: string) => {
+        const numVal = val === "" ? null : Number(val);
+
+        setSavingMark(true);
+        try {
+            const updated = await updateOne("marks", mark.id, { marks: numVal }); // ✅ FIXED
+
+            setTests(prev =>
+                prev.map(t =>
+                    !t.marks ? t : {
+                        ...t,
+                        marks: t.marks.map(m =>
+                            m.id === mark.id ? { ...m, marks: numVal } : m
+                        )
+                    }
+                )
+            );
+
+            setActive(prev =>
+                !prev?.marks ? prev : {
+                    ...prev,
+                    marks: prev.marks.map(m =>
+                        m.id === mark.id ? { ...m, marks: numVal } : m
+                    )
+                }
+            );
+
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to save mark.");
+        } finally {
+            setSavingMark(false);
+        }
+    };
+
+    const avg = (t: Test) => {
+        const scored = (t.marks ?? []).filter(m => m.marks !== null);
+        if (!scored.length) return null;
+        return Math.round(scored.reduce((a, m) => a + (m.marks ?? 0), 0) / scored.length);
+    };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -148,7 +174,7 @@ export default function TestsPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-text-primary truncate">{t.title}</p>
                       <p className="text-xs text-text-muted mt-0.5">{t.subject}</p>
-                      <p className="text-xs text-text-muted">{t.date} · Max: {t.total_marks}</p>
+                      <p className="text-xs text-text-muted">{t.date} · Max: {t.totalMarks}</p>
                     </div>
                     <span className={clsx("badge flex-shrink-0", t.status === "Completed" ? "bg-success-50 text-success-600" : "bg-warning-50 text-warning-600")}>
                       {t.status === "Completed" ? <CheckCircle size={10} className="inline mr-1"/> : <Clock size={10} className="inline mr-1"/>}{t.status}
@@ -157,7 +183,7 @@ export default function TestsPage() {
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-surface-border">
                     <span className="text-xs text-text-muted">{(t.marks ?? []).length} students</span>
                     <span className="text-xs font-semibold text-text-primary">
-                      Avg: {average !== null ? `${average}/${t.total_marks}` : "—"}
+                      Avg: {average !== null ? `${average}/${t.totalMarks}` : "—"}
                     </span>
                   </div>
                   {deleteId === t.id ? (
@@ -184,7 +210,7 @@ export default function TestsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-base font-bold text-text-primary">{activeTest.title}</h2>
-                    <p className="text-xs text-text-muted">Max Marks: {activeTest.total_marks}</p>
+                    <p className="text-xs text-text-muted">Max Marks: {activeTest.totalMarks}</p>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => handleMarkComplete(activeTest)} className="text-xs px-3 py-1.5 bg-success-50 border border-success-200 text-success-600 rounded-xl hover:bg-success-100">Mark Complete</button>
@@ -201,18 +227,18 @@ export default function TestsPage() {
                         </div>
                         <span className="flex-1 text-sm font-medium text-text-primary">{sm.student_name}</span>
                         <input
-                          type="number" min={0} max={activeTest.total_marks}
+                          type="number" min={0} max={activeTest.totalMarks}
                           value={sm.marks ?? ""}
                           onChange={e => updateMark(sm, e.target.value)}
                           disabled={savingMark}
                           placeholder="—"
                           className="w-20 text-center input-field !py-1.5 !text-sm"
                         />
-                        <span className="text-xs text-text-muted">/{activeTest.total_marks}</span>
+                        <span className="text-xs text-text-muted">/{activeTest.totalMarks}</span>
                         {sm.marks !== null && (
                           <span className={clsx("text-xs font-semibold w-10 text-right",
-                            sm.marks/activeTest.total_marks >= 0.7 ? "text-success-600" : sm.marks/activeTest.total_marks >= 0.4 ? "text-warning-600" : "text-danger-600")}>
-                            {Math.round(sm.marks/activeTest.total_marks*100)}%
+                            sm.marks/activeTest.totalMarks >= 0.7 ? "text-success-600" : sm.marks/activeTest.totalMarks >= 0.4 ? "text-warning-600" : "text-danger-600")}>
+                            {Math.round(sm.marks/activeTest.totalMarks*100)}%
                           </span>
                         )}
                       </div>
@@ -244,15 +270,15 @@ export default function TestsPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Date</label>
-              <input type="date" value={form.date} onChange={e => setForm(p=>({...p, date:e.target.value}))} className="input-field" />
+              <input type="date" value={form.date} onChange={e => setForm(p=>({...p, date:e.target.value}))} title="Test date" placeholder="Select a date" className="input-field" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Total Marks</label>
-              <input type="number" min={1} value={form.total_marks} onChange={e => setForm(p=>({...p, total_marks:Number(e.target.value)}))} className="input-field" />
+              <input type="number" min={1} value={form.totalMarks} onChange={e => setForm(p=>({...p, total_marks:Number(e.target.value)}))} title="Total marks for the test" placeholder="e.g. 100" className="input-field" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">Status</label>
-              <select value={form.status} onChange={e => setForm(p=>({...p, status:e.target.value as Test["status"]}))} className="input-field">
+              <select value={form.status} onChange={e => setForm(p=>({...p, status:e.target.value as Test["status"]}))} title="Test status" className="input-field">
                 <option>Upcoming</option>
                 <option>Completed</option>
               </select>
