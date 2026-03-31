@@ -83,7 +83,7 @@ export default function EnquiriesPage() {
                 stage: form.stage,
                 source: form.source,
                 notes: form.notes,
-                follow_up: form.date || null,        // Django field name
+                followUp: form.date || null,        // Django field name
             };
 
             if (editing) {

@@ -17,4 +17,8 @@ class EnquiryViewSet(viewsets.ModelViewSet):
         return Enquiry.objects.filter(tutor=self.request.user.tutor)
 
     def perform_create(self, serializer):
-        serializer.save(tutor=self.request.user.tutor)
+        from api.users.models import Tutor
+        tutor = Tutor.objects.filter(user=self.request.user).first()
+        if not tutor:
+            raise Exception("Tutor not found")
+        serializer.save(tutor=tutor)
