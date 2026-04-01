@@ -13,7 +13,12 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-change-me-in-p
 
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+# ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+# made change by me
+ALLOWED_HOSTS = ["*"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.onrender.com"
+]
 
 # ─── Installed Apps ────────────────────────────────────────────────────────────
 DJANGO_APPS = [
