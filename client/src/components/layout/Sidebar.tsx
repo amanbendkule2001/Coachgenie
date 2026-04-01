@@ -26,15 +26,15 @@ const navItems = [
   { label: "Dashboard",         href: "/dashboard/tutor",             icon: LayoutDashboard },
   { label: "Students",          href: "/dashboard/tutor/students",    icon: Users },
   { label: "Courses",           href: "/dashboard/tutor/courses",     icon: BookOpen },
-  { label: "Timetable",         href: "/dashboard/tutor/timetable",   icon: Calendar },
+  { label: "Timetable (Beta)",  href: "/dashboard/tutor/timetable",   icon: Calendar },
   { label: "Tests & Marks",     href: "/dashboard/tutor/tests",       icon: ClipboardList },
   { label: "Materials",         href: "/dashboard/tutor/materials",   icon: FileText },
   { label: "Fees & Payments",   href: "/dashboard/tutor/fees",        icon: CreditCard },
   { label: "Enquiries",         href: "/dashboard/tutor/enquiries",   icon: MessageSquare },
   { label: "Todo Tasks",        href: "/dashboard/tutor/todo",        icon: CheckSquare },
-  { label: "Activities",        href: "/dashboard/tutor/activities",  icon: Palmtree },
-  { label: "Certificates",      href: "/dashboard/tutor/certificates",icon: Award },
-  { label: "AI Analytics",      href: "/dashboard/tutor/analytics",   icon: BrainCircuit },
+  { label: "Activities ",        href: "/dashboard/tutor/activities",  icon: Palmtree },
+  { label: "Certificates (Beta)",      href: "/dashboard/tutor/certificates",icon: Award },
+  { label: "AI Analytics (Beta)",      href: "/dashboard/tutor/analytics",   icon: BrainCircuit },
 ];
 
 export default function Sidebar() {
@@ -54,11 +54,16 @@ export default function Sidebar() {
         collapsed && "justify-center px-2"
       )}>
         <div className="w-9 h-9 bg-primary-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
-          <GraduationCap size={20} className="text-white" />
+          {/* <GraduationCap size={20} className="text-white" /> */}
+          <img
+  src="/logo.jpg"
+  alt="logo"
+  className="w-10 h-10 object-contain"
+/>
         </div>
         {!collapsed && (
           <div>
-            <p className="text-white font-bold text-base leading-tight">SmartEdu</p>
+            <p className="text-white font-bold text-base leading-tight">CoachGenie</p>
             <p className="text-sidebar-text text-xs">Tutor Portal</p>
           </div>
         )}

@@ -9,7 +9,8 @@ import Modal from "@/components/ui/Modal";
 import clsx from "clsx";
 
 // ✅ FINAL STAGES (Aligned with backend exactly)
-const STAGES: Enquiry["stage"][] = ["New", "Contacted", "Interested", "Trial", "Converted", "Rejected"];
+// const STAGES: Enquiry["stage"][] = ["New", "Contacted", "Interested", "Trial", "Converted", "Rejected"];
+const STAGES: Enquiry["stage"][] = ["New", "Contacted", "Interested", "Converted", "Rejected"];
 
 const SOURCES = ["Referral", "Social Media", "Website", "Walk-in", "Other"];
 
@@ -17,7 +18,7 @@ const STAGE_COLORS: Record<Enquiry["stage"], string> = {
     New: "bg-primary-500/20 text-primary-400 border-primary-500/30",
     Contacted: "bg-warning-500/20 text-warning-500 border-warning-500/30",
     Interested: "bg-success-500/20 text-success-400 border-success-500/30",
-    Trial: "bg-info-500/20 text-info-400 border-info-500/30",
+    // Trial: "bg-info-500/20 text-info-400 border-info-500/30",
     Converted: "bg-success-500/30 text-success-300 border-success-500/40",
     Rejected: "bg-surface-muted text-text-muted border-surface-border",
 };

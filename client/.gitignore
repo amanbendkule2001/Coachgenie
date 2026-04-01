@@ -1,0 +1,33 @@
+# node_modules/
+# .next/
+# .env
+# .DS_Store
+# *.log
+
+@"
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build output
+/build
+/dist
+client/build
+
+# Environment variables (keep secrets safe!)
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+"@ | Out-File -FilePath .gitignore -Encoding utf8
