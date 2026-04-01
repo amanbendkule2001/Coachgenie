@@ -8,7 +8,7 @@ services:
       pip install -r ../requirements.txt &&
       python manage.py collectstatic --no-input &&
       python manage.py migrate
-    startCommand: gunicorn --chdir /opt/render/project/src smartedu.wsgi:application --workers 2 --timeout 120
+    startCommand: bash -c "cd /opt/render/project/src && gunicorn smartedu.wsgi:application --workers 2 --timeout 120"
     envVars:
       - key: DJANGO_SECRET_KEY
         generateValue: true
