@@ -7,7 +7,11 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "export",   // ✅ THIS is the key
-};
+  output: 'export',        // ← This enables static export
+  trailingSlash: true,     // ← Recommended for Hostinger
+  images: {
+    unoptimized: true,     // ← Required for static export
+  },
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig
