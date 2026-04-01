@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: smartedu-api
+    runtime: python
+    rootDir: smartedu
+    buildCommand: >
+      pip install -r ../requirements.txt &&
+      python manage.py collectstatic --no-input &&
+      python manage.py migrate
+    startCommand: gunicorn smartedu.wsgi:application --workers 2 --timeout 120
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com,localhost"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "http://localhost:3000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smartedu-db
+          property: connectionString
+
+databases:
+  - name: smartedu-db
+    databaseName: smartedu
+    user: smartedu_user

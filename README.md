@@ -1,3 +1,4 @@
+
 # 📚 SmartEdu – Tutor Management Platform
 
 SmartEdu is a platform designed to help tutors manage their teaching workflow in a structured and efficient way.
@@ -120,3 +121,6 @@ Future versions of SmartEdu will include:
 More updates coming soon as the project evolves.
 
 ---
+=======
+# Coachgenie
+
